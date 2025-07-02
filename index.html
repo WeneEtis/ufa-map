@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>UFA Locations</title>
+  <meta charset="utf-8" >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" >
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { width: 100%; height: 100%; }
+    .leaflet-popup-content-wrapper { font-family: Arial, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <script>
+    // Initialize map
+    const map = L.map('map').setView([53.9346, -116.8871], 5); // Centered on Alberta/Saskatchewan
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Define icons
+    const farmIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/1163/1163661.png',
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+      popupAnchor: [0, -30]
+    });
+
+    const petroleumIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/1163/1163661.png',
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+      popupAnchor: [0, -30]
+    });
+
+    const fertilizerIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/1163/1163661.png',
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+      popupAnchor: [0, -30]
+    });
+
+    // Inline CSV data (replace with your hosted CSV URL if needed)
+    const csvData = `Name,Address,Latitude,Longitude
+UFA Farm & Ranch Supply Store,"200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2",51.3042704,-113.9966834
+UFA Petroleum Agency & Cardlock,"100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2",51.3042704,-113.9966834
+UFA Farm & Ranch Supply Store,"3922 53 Street, Athabasca, AB, T9S 1B3",54.705852,-113.2963253
+UFA Petroleum Agency & Cardlock,"2717 48 Avenue, Athabasca, AB, T9S 0A2",54.718363,-113.295052
+UFA Petroleum Agency & Cardlock,"6102 48 Street, Barrhead, AB, T7N 1A4",54.1312291,-114.3991238
+UFA Petroleum Agency & Cardlock,"4510 50 Street, Bashaw, AB, T0B 0H0",52.580285,-112.976363
+UFA Petroleum Agency & Cardlock,"203 Railway Avenue, Bawlf, AB, T0B 0J0",52.917801290087326,-112.4675472
+UFA Petroleum Cardlock,"Highway 49, Bay Tree, AB, T0H 0A0",55.826516,-119.901744
+UFA Petroleum Agency & Cardlock,"102 3 Street W, Beaverlodge, AB, T0H 0C0",55.200337,-119.434493
+UFA Petroleum Agency & Cardlock,"504 7 Street, Beiseker, AB, T0M 0G0",51.380595,-113.5311714
+UFA Petroleum Agency & Cardlock,"404 7 Avenue W, Bow Island, AB, T0K 0G0",49.86734609697563,-111.3819178
+UFA Farm & Ranch Supply Store,"34-145051 Township Road 192 S, Brooks, AB, T1R 1C7",50.566689,-111.916472
+UFA Petroleum Agency & Cardlock,"205-191056 Highway 873, Brooks, AB, T1R 1C6",50.57912839389027,-111.8971637
+UFA Petroleum Cardlock,"702 Lakeshore Drive, Buck Lake, AB, T0C 0T0",52.94572272614069,-114.7635162
+UFA Petroleum Agency & Cardlock,"Highway 16 & 47, Edson, AB, T7E 1V4",53.5858662,-116.442847
+UFA Petroleum Agency & Cardlock,"619 Moraine Road NE, Calgary, AB, T2A 2P4",51.057184,-113.998826
+UFA Support Office,"700-4838 Richard Road SW, Calgary, AB, T3E 6L1",51.011439590010184,-114.1244607
+UFA Farm & Ranch Supply Store,"4904 39 Street, Camrose, AB, T4V 2N7",53.01943233147715,-112.8064378
+UFA Petroleum Agency & Cardlock,"4719 37 Street, Camrose, AB, T4V 0S9",53.014344,-112.797102
+UFA Petroleum Agency & Cardlock,"1058 1 Avenue W, Cardston, AB, T0K 0K0",49.2018654,-113.327092
+UFA Petroleum Agency & Cardlock,"123 9 Avenue, Carstairs, AB, T0M 0N0",51.5673578,-114.0987972
+UFA Petroleum Agency & Cardlock,"5210 50 Avenue, Castor, AB, T0C 0X0",52.217576199999996,-111.9031332
+UFA Petroleum Agency & Cardlock,"611 5 Avenue W, Cereal, AB, T0J 0N0",51.418546,-110.800204
+UFA Farm & Ranch Supply Store,"4425 5 Street E, Claresholm, AB, T0L 0T0",50.021358,-113.572856
+UFA Petroleum Agency & Cardlock,"4424 2 Street E, Claresholm, AB, T0L 0T0",50.0208413,-113.576702
+UFA Farm & Ranch Supply Store,"4618 48A Avenue, Consort, AB, T0C 1B0",52.006745,-110.769476
+UFA Petroleum Agency & Cardlock,"5411 48 Avenue, Consort, AB, T0C 1B0",52.005954,-110.773631
+UFA Petroleum Agency & Cardlock,"2 Henry Gate, Corman Park, SK, S7K 3J7",52.2261639,-106.5931267
+UFA Petroleum Agency & Cardlock,"4430 Victoria Avenue, Coronation, AB, T0C 1C0",52.089671,-111.4389925
+UFA Petroleum Agency & Cardlock,"4936 46 Street, Czar, AB, T0B 0Z0",52.4561746,-110.820648
+UFA Petroleum Agency & Cardlock,"401 Highway 2, Dawson Creek, BC, V1G 4H7",55.75769675,-120.2246128
+UFA Petroleum Cardlock,"101 1 Street W, Delia, AB, T0J 0W0",51.630268,-112.375208
+UFA Petroleum Agency & Cardlock,"115 2 Street E, Dewberry, AB, T0B 1G0",53.588363,-110.522384
+UFA Farm & Ranch Supply Store,"3214 63 Street, Drayton Valley, AB, T7A 1S4",53.20557494999443,-115.0032024
+UFA Petroleum Agency & Cardlock,"3225 63 Street SE, Drayton Valley, AB, T7A 1R3",53.205575,-115.003202
+UFA Petroleum Agency & Cardlock,"701 Elgin Close, Drumheller, AB, T0J 0Y1",51.46168385,-112.7194321
+UFA Petroleum Agency & Cardlock,"206 3 Avenue E, Dunmore, AB, T1B 0J9",49.970397899999995,-110.5768293
+UFA Fertilizer Plant,"Secondary Highway 739, Eaglesham, AB, T0H 1H0",55.7822811,-117.8823326
+UFA Petroleum Cardlock,"4804 54 Avenue, Eckville, AB, T0M 0X0",52.363133,-114.361735
+UFA Petroleum Agency & Cardlock,"5015 53 Street, Edgerton, AB, T0B 1K0",52.760788,-110.463195
+UFA Petroleum Agency & Cardlock,"5823 125 Avenue NW, Edmonton, AB, T5W 5G4",53.581364429249554,-113.4312948
+UFA Petroleum Agency & Cardlock,"16707 121 Avenue NW, Edmonton, AB, T5B 4J6",53.572652704414466,-113.6092618
+UFA Petroleum Agency & Cardlock,"Highway 16 & 47, Edson, AB, T7E 1V4",53.5858662,-116.442847
+UFA Petroleum Agency & Cardlock,"4525 Railway Avenue, Elk Point, AB, T0A 1A0",53.89616603032539,-110.8932377
+UFA Farm & Ranch Supply Store,"11804 101 Avenue, Fairview, AB, T0H 1L0",56.0657912,-118.4011783
+UFA Petroleum Agency & Cardlock,"9209 113 Street, Fairview, AB, T0H 1L0",56.058560652941175,-118.3917179
+UFA Farm & Ranch Supply Store,"922 Main Street SE, Falher, AB, T0H 1M0",55.7346878,-117.201276
+UFA Petroleum Cardlock,"921 Main Street SW, Falher, AB, T0H 1M0",55.732494,-117.202032
+UFA Petroleum Agency & Cardlock,"4402 47 Street, Forestburg, AB, T0B 1N0",52.58203864388361,-112.0588849
+UFA Petroleum Agency & Cardlock,"865 14 Street, Fort Macleod, AB, T0L 0Z0",49.71780965,-113.3904833
+UFA Farm & Ranch Supply Store,"11111 86 Avenue, Fort Saskatchewan, AB, T8L 3W6",53.7059015,-113.1903733
+UFA Petroleum Agency & Cardlock,"8594 112 Street, Fort Saskatchewan, AB, T8L 3V8",53.705267,-113.188643
+UFA Petroleum Agency & Cardlock,"7408 Alaska Road N, Fort St. John, BC, V1J 6Y4",56.222139,-120.800873
+UFA Petroleum Agency & Cardlock,"102 1 Avenue, Fox Creek, AB, T0H 1P0",54.39393465,-116.8002985
+UFA Petroleum Agency & Cardlock,"5011 Railway Avenue, Glendon, AB, T0A 1P0",54.251076,-111.156714
+UFA Petroleum Cardlock,"Highway 40 S, Grande Cache, AB, T0E 0Y0",53.89451287380662,-119.1372981
+UFA Farm & Ranch Supply Store,"15602 101 Street, Grande Prairie, AB, T8V 0P2",55.198012065551985,-118.7980107
+UFA Petroleum Agency & Cardlock,"13705 100 Street, Grande Prairie, AB, T8V 4H4",55.2050581,-118.7935056
+UFA Petroleum Cardlock,"15602 101 Street, Grande Prairie, AB, T8V 0P2",55.198012065551985,-118.7980107
+UFA Petroleum Cardlock,"9702 115 Street, Grande Prairie, AB, T8V 4J5",55.1672801,-118.8424851
+UFA Farm & Ranch Supply Store,"5303 57 Avenue, Grimshaw, AB, T0H 1W0",56.193631,-117.615208
+UFA Petroleum Agency & Cardlock,"5901 51 Street, Grimshaw, AB, T0H 1W0",56.1971075,-117.6118531
+UFA Farm & Ranch Supply Store,"601 1 Avenue W, Hanna, AB, T0J 1P0",51.639955,-111.938297
+UFA Petroleum Agency & Cardlock,"605 1 Avenue W, Hanna, AB, T0J 1P0",51.640978,-111.933587
+UFA Petroleum Agency & Cardlock,"11400 95 Street, High Level, AB, T0H 1Z0",58.505718,-117.138062
+UFA Petroleum Agency & Cardlock,"4136 53 Avenue, High Prairie, AB, T0G 1E0",55.43287762441355,-116.5046471
+UFA Farm & Ranch Supply Store,"2006 10 Avenue SE, High River, AB, T1V 1M7",50.57397063,-113.8539692
+UFA Petroleum Agency & Cardlock,"2002 10 Avenue SE, High River, AB, T1V 1M7",50.57397063,-113.8539692
+UFA Petroleum Cardlock,"1044 1 Avenue, Hines Creek, AB, T0H 1L0",56.247517,-118.606632
+UFA Petroleum Agency & Cardlock,"301 Fleming Drive, Hinton, AB, T7V 0B1",53.414985,-117.543082
+UFA Petroleum Agency & Cardlock,"5015 40 Avenue, Innisfail, AB, T4G 1Z1",52.029184,-113.930408
+UFA Petroleum Agency & Cardlock,"NE Corner Highway 36 & 13, Killam, AB, T0B 2L0",52.7877367,-111.8569101
+UFA Petroleum Agency & Cardlock,"1415 11 Avenue W, Kindersley, SK, S0L 1S0",51.47384475,-109.1907039
+UFA Farm & Ranch Supply Store,"9801 100 Street, La Crete, AB, T0H 2H0",58.1842696,-116.404296
+UFA Fertilizer Plant,"10305 100 Street, La Crete, AB, T0H 2H0",58.18991638,-116.4042854
+UFA Petroleum Agency & Cardlock,"10301 100 Street, La Crete, AB, T0H 2H0",58.1898627,-116.4042857
+UFA Petroleum Cardlock,"10101 100 Avenue, La Glace, AB, T0H 2J0",55.40297895,-119.1584737
+UFA Petroleum Agency & Cardlock,"8304 100 Street, Lac La Biche, AB, T0A 2C0",54.7578111,-111.9727686
+UFA Petroleum Agency & Cardlock,"4537 50 Avenue, Lacombe, AB, T4L 2B5",52.463019,-113.724528
+UFA Farm & Ranch Supply Store,"6505 45 Street, Leduc, AB, T9E 7E1",53.2798842,-113.5407584
+UFA Petroleum Agency & Cardlock,"6509 45 Street, Leduc, AB, T9E 7E1",53.281401,-113.54112
+UFA Farm & Ranch Supply Store,"2905 2 Avenue N, Lethbridge, AB, T1H 6M1",49.7007286,-112.798853
+UFA Fertilizer Plant,"Highway 4 & 845, Lethbridge, AB, T1J 4P4",49.71034893333333,-112.7172642
+UFA Petroleum Agency & Cardlock,"3125 2 Avenue N, Lethbridge, AB, T1H 0C5",49.700895,-112.794683
+UFA Petroleum Agency & Cardlock,"5601 63 Avenue, Lloydminster, AB, T9V 3T7",53.295653,-110.036557
+UFA Petroleum Cardlock,"305 2 Avenue N, Lomond, AB, T0L 2B0",50.350965,-112.64038
+UFA Petroleum Cardlock,"5510 46 Street, Macklin, SK, S0L 2C0",52.33174562634594,-109.9360705
+UFA Petroleum Agency & Cardlock,"HWY 35, Manning, AB, T0H 2M0",56.93400758840293,-117.6247795
+UFA Petroleum Agency & Cardlock,"5007 47 Street, Mannville, AB, T0B 2W0",53.33696775,-111.1746836
+UFA Farm & Ranch Supply Store,"4606 42 Avenue, Mayerthorpe, AB, T0E 1N0",53.94220900948253,-115.1283559
+UFA Petroleum Agency & Cardlock,"4913 42 Avenue, Mayerthorpe, AB, T0E 1N0",53.9473995,-115.1380366
+UFA Farm & Ranch Supply Store,"1467 30 Street SW, Medicine Hat, AB, T1B 3N4",50.010902,-110.720465
+UFA Petroleum Agency & Cardlock,"1725 Hodgins Drive, Melfort, SK, S0E 1A0",52.84745169967201,-104.599142
+UFA Petroleum Agency & Cardlock,"704 Service Road NW, Milk River, AB, T0K 1M0",49.154042,-112.090749
+UFA Petroleum Agency & Cardlock,"9901 87 Avenue, Morinville, AB, T8R 1K6",53.7830772,-113.6438746
+UFA Petroleum Agency & Cardlock,"1705 20 Avenue, Nanton, AB, T0L 1R0",50.350992,-113.774157
+UFA Petroleum Cardlock,"102 Highway Avenue, Nobleford, AB, T0L 1S0",49.874434550000004,-113.0534739
+UFA Farm & Ranch Supply Store,"4334 46 Avenue, Olds, AB, T4H 1A2",51.79918975,-114.097111
+UFA Petroleum Agency & Cardlock,"4514 Imperial Road, Olds, AB, T4H 1M6",51.795975,-114.130363
+UFA Petroleum Agency & Cardlock,"5340 Lac St. Anne Trail S, Onoway, AB, T0E 1V0",53.702509449999994,-114.2019053
+UFA Farm & Ranch Supply Store,"132 4 Street E, Oyen, AB, T0J 2J0",51.3546094,-110.4746265
+UFA Petroleum Agency & Cardlock,"104 4 Street E, Oyen, AB, T0J 2J0",51.35384844924242,-110.47438
+UFA Petroleum Agency & Cardlock,"9801 74 Street, Peace River, AB, T0H 1W0",56.18725562155556,-117.614491
+UFA Petroleum Agency & Cardlock,"119 Highway Avenue N, Picture Butte, AB, T0K 1V0",49.87957110000001,-112.7755772
+UFA Petroleum Agency & Cardlock,"1050 Corner Mountain Street, Pincher Creek, AB, T0K 1W0",49.501876,-113.944675
+UFA Farm & Ranch Supply Store,"3604 67 Street, Ponoka, AB, T4J 1J8",52.666467,-113.606856
+UFA Petroleum Agency & Cardlock,"6520 46 Avenue, Ponoka, AB, T4J 1J8",52.674507,-113.603416
+UFA Farm & Ranch Supply Store,"4312 50 Avenue, Provost, AB, T0B 3S0",52.351723,-110.255403
+UFA Petroleum Agency & Cardlock,"3803 56 Avenue, Provost, AB, T0B 3S0",52.35976016,-110.2574083
+UFA Petroleum Agency & Cardlock,"3175 Commercial Drive, RM Of Moose Jaw, SK, S6H 4P5",50.4272786,-105.562481
+UFA Petroleum Agency & Cardlock,"8121 Edgar Industrial Drive, Red Deer, AB, T4P 3R2",52.315192499999995,-113.8390865
+UFA Farm & Ranch Supply Store,"416 Lantern Street, Red Deer County, AB, T4E 0A5",52.2104183,-113.8239546
+UFA Petroleum Cardlock,"37479 Highway 2, Red Deer County, AB, T4E 1B1",52.222038,-113.811513
+UFA Petroleum Cardlock,"204 Burnt Ridge Road, Red Deer County, AB, T4S 2L4",52.2900344,-113.8717235
+UFA Petroleum Cardlock,"416 Lantern Street, Red Deer County, AB, T4E 0A5",52.2104183,-113.8239546
+UFA Petroleum Cardlock,"1632 Dirkson Drive NE, Redcliff, AB, T0J 2P0",50.0821131,-110.7641038
+UFA Petroleum Agency & Cardlock,"5602 43 Street, Rimbey, AB, T0C 2J0",52.64559170833459,-114.2228037
+UFA Petroleum Agency & Cardlock,"4326 52 Avenue, Rocky Mountain House, AB, T0M 1T0",52.377609232792345,-114.924334
+UFA Petroleum Agency & Cardlock,"4910 42 Street, Rycroft, AB, T0H 3A0",55.757202649999996,-118.6997524
+UFA Fertilizer Plant,"23-732010 Range Road 62, Sexsmith, AB, T0H 3C0",55.357856,-118.792986
+UFA Petroleum Agency & Cardlock,"5503 44 Avenue, Smoky Lake, AB, T0A 3C0",54.1096342,-112.4835558
+UFA Petroleum Cardlock,"5002 50 Street, Spirit River, AB, T0H 3G0",55.781138892592594,-118.8389465
+UFA Farm & Ranch Supply Store,"200 Diamond Avenue, Spruce Grove, AB, T7X 3A8",53.5357419,-113.9096663
+UFA Petroleum Cardlock,"200 Diamond Avenue, Spruce Grove, AB, T7X 3A8",53.5357419,-113.9096663
+UFA Farm & Ranch Supply Store,"3938 50 Avenue, St. Paul, AB, T0A 3A0",53.991365,-111.294848
+UFA Petroleum Cardlock,"3938 50 Avenue, St. Paul, AB, T0A 3A0",53.991365,-111.294848
+UFA Farm & Ranch Supply Store,"7007 50 Avenue NW, Stettler, AB, T0C 2L1",52.3235921,-112.7406237
+UFA Fertilizer Plant,"5107 46 Street, Stettler, AB, T0C 2L0",52.321609,-112.6990224
+UFA Petroleum Agency & Cardlock,"7007A 50 Avenue, Stettler, AB, T0C 2L0",52.32398,-112.7425935
+UFA Farm & Ranch Supply Store,"58 Slater Road, Strathmore, AB, T1P 1J3",51.03113505,-113.3873141
+UFA Petroleum Agency & Cardlock,"59 Spruce Park Drive, Strathmore, AB, T1P 1J2",51.031734,-113.387673
+UFA Petroleum Agency & Cardlock,"1810 South Service Road, Swift Current, SK, S9H 3T3",50.286652,-107.824797
+UFA Petroleum Agency & Cardlock,"18 Industrial Drive, Sylvan Lake, AB, T4S 1P4",52.3152,-114.069728
+UFA Farm & Ranch Supply Store,"5813 60 Avenue, Taber, AB, T1G 2C2",49.796452,-112.134283
+UFA Petroleum Agency & Cardlock,"5807 60 Avenue, Taber, AB, T1G 2E1",49.79638592164492,-112.1455478
+UFA Petroleum Agency & Cardlock,"1631 2 Street N, Three Hills, AB, T0M 2A0",51.7066502,-113.2470998
+UFA Petroleum Agency & Cardlock,"5108 51 Avenue, Tofield, AB, T0B 4J0",53.367464,-112.664367
+UFA Farm & Ranch Supply Store,"101 1 Avenue N, Trochu, AB, T0M 2C0",51.823068,-113.237241
+UFA Petroleum Agency & Cardlock,"100 1 Avenue N, Trochu, AB, T0M 2C0",51.82371676448556,-113.2383179
+UFA Farm & Ranch Supply Store,"5101 53 Avenue, Two Hills, AB, T0B 4K0",53.71333768870123,-111.7382502
+UFA Petroleum Agency & Cardlock,"4801 55 Avenue, Two Hills, AB, T0B 4K0",53.71620335,-111.7381258
+UFA Petroleum Agency & Cardlock,"4513 E Highway Street, Valleyview, AB, T0H 3N0",55.0654406,-117.2774164
+UFA Petroleum Agency & Cardlock,"4725 50 Avenue, Vegreville, AB, T9C 1L1",53.490993,-112.043786
+UFA Farm & Ranch Supply Store,"4908 47 Avenue, Vermilion, AB, T9X 1J6",53.349949,-110.851326
+UFA Petroleum Agency & Cardlock,"4910 47 Avenue, Vermilion, AB, T9X 1J6",53.3503092,-110.850968
+UFA Farm & Ranch Supply Store,"919 2 Avenue N, Vulcan, AB, T0L 2B0",50.408587,-113.270434
+UFA Fertilizer Plant,"410 1 Avenue N, Vulcan, AB, T0L 2B0",50.407434,-113.264394
+UFA Petroleum Agency & Cardlock,"110 Service Road, Vulcan, AB, T0L 2B0",50.40544785,-113.2572109
+UFA Petroleum Cardlock,"1100 Highway 813, Wabasca, AB, T0G 2K0",55.9578311,-113.8128486
+UFA Petroleum Agency & Cardlock,"2202 17 Avenue, Wainwright, AB, T9W 1L2",52.8468931,-110.8393163
+UFA Petroleum Agency & Cardlock,"5008 53 Street, Warburg, AB, T0C 2T0",53.1793433,-114.3224247
+UFA Farm & Ranch Supply Store,"10820 100 Street, Westlock, AB, T7P 2C3",54.152266,-113.837625
+UFA Petroleum Agency & Cardlock,"9616 107 Street, Westlock, AB, T7P 1R4",54.152531,-113.871411
+UFA Petroleum Cardlock,"4805 40 Avenue, Wetaskiwin, AB, T9A 3E9",52.9596407,-113.373922
+UFA Petroleum Agency & Cardlock,"2 Cossette Lane, Weyburn, SK, S4H 0W4",49.6691121,-103.8944682
+UFA Petroleum Agency & Cardlock,"5400 Caxton Street W, Whitecourt, AB, T7S 0A5",54.142887,-115.712854
+UFA Petroleum Agency & Cardlock,"53417 Range Road 92, Wildwood, AB, T0E 2M0",53.62214445548833,-115.2301135
+UFA Petroleum Agency & Cardlock,"476 Secondary Highway 726, Worsley, AB, T0H 3W0",56.5076803,-119.1331451
+UFA Petroleum Agency & Cardlock,"309 Fitchner Road, Yorkton, SK, S3N 2W7",51.2239086,-102.4907083`;
+
+    // Parse CSV
+    Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        results.data.forEach(row => {
+          const lat = parseFloat(row.Latitude);
+          const lon = parseFloat(row.Longitude);
+          const name = row.Name;
+          const address = row.Address;
+
+          if (!isNaN(lat) && !isNaN(lon)) {
+            // Choose icon based on location type
+            let icon = petroleumIcon;
+            if (name.includes("Farm & Ranch")) icon = farmIcon;
+            if (name.includes("Fertilizer")) icon = fertilizerIcon;
+
+            // Add marker
+            L.marker([lat, lon], { icon: icon })
+              .addTo(map)
+              .bindPopup(`<b>${name}</b><br>${address}<br>Lat: ${lat}, Lon: ${lon}`);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
