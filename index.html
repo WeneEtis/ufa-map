@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>UFA Locations Map</title>
+  <title>UFA Locations Map with Free Autocomplete</title>
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
@@ -78,6 +78,33 @@
       border-color: #d8232a;
       color: #d8232a;
     }
+    .autocomplete-suggestions {
+      position: absolute;
+      top: 110%;
+      left: 0;
+      width: 100%;
+      background: #fff;
+      z-index: 9999;
+      border: 1.5px solid #eee;
+      border-radius: 0 0 9px 9px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .autocomplete-suggestion {
+      padding: 11px 18px;
+      cursor: pointer;
+      font-size: 16px;
+      border-bottom: 1px solid #f4f4f4;
+      color: #333;
+      background: #fff;
+      transition: background 0.17s;
+    }
+    .autocomplete-suggestion:last-child { border-bottom: none; }
+    .autocomplete-suggestion:hover, .autocomplete-suggestion.active {
+      background: #fbeaec;
+      color: #d8232a;
+    }
     .location-list {
       margin: 0; padding: 0; list-style: none;
       overflow-y: auto; max-height: 62vh; /* Sidebar scroll! */
@@ -96,7 +123,6 @@
     }
     .location-item strong { color: #d8232a; display: block; font-size: 17px;}
     .location-item small { color: #222; }
-    /* Responsive: collapse sidebar below 700px */
     @media (max-width: 850px) {
       .sidebar { width: 100vw; min-width: 0; max-width: none; }
       .container { flex-direction: column; }
@@ -132,6 +158,7 @@
           oninput="filterMarkers()"
         />
         <button class="search-clear-btn" onclick="clearSearch()" style="display:none;" id="clearBtn">&times;</button>
+        <div id="autocompleteBox" class="autocomplete-suggestions" style="display:none;"></div>
       </div>
       <ul class="location-list" id="locationList"></ul>
     </div>
@@ -140,7 +167,7 @@
 </div>
 
 <script>
-  // Demo locations (replace with your data)
+  // Your locations data here!
   const locations = [
     { name: "UFA Farm & Ranch Supply Store", address: "200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
     { name: "UFA Petroleum Agency & Cardlock", address: "100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
@@ -302,6 +329,7 @@
     { name: "UFA Petroleum Agency & Cardlock", address: "476 Secondary Highway 726, Worsley, AB, T0H 3W0", lat: 56.5076803, lng: -119.1331451 },
     { name: "UFA Petroleum Agency & Cardlock", address: "309 Fitchner Road, Yorkton, SK, S3N 2W7", lat: 51.2239086, lng: -102.4907083 }
 ];
+
   // Red marker icon
   const redIcon = L.icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -347,14 +375,11 @@
       ul.appendChild(li);
     });
   }
-
-  // Highlight sidebar row
   function highlightSidebar(idx) {
     document.querySelectorAll('.location-item').forEach(el=>el.classList.remove('active'));
     const row = document.querySelector(`.location-item[data-idx="${idx}"]`);
     if(row) row.classList.add('active');
   }
-
   renderLocationList();
 
   // Sidebar expand/collapse
@@ -386,7 +411,6 @@
       }
     });
     renderLocationList(filtered);
-    // Optionally zoom to first visible marker
     if (filtered.length === 1) {
       map.setView([filtered[0].lat, filtered[0].lng], 13);
       markers[filtered[0].idx ?? locations.indexOf(filtered[0])].openPopup();
@@ -396,19 +420,69 @@
     searchInput.value = "";
     clearBtn.style.display = "none";
     filterMarkers();
+    hideAutocomplete();
+  }
+  searchInput.addEventListener("input", function() {
+    clearBtn.style.display = this.value ? "flex" : "none";
+    fetchAutocomplete(this.value);
+  });
+
+  // -------- Autocomplete (Photon API) --------
+  const acBox = document.getElementById('autocompleteBox');
+  function fetchAutocomplete(query) {
+    if (!query.trim()) return hideAutocomplete();
+    fetch('https://photon.komoot.io/api/?q=' + encodeURIComponent(query) + '&limit=6')
+      .then(r=>r.json()).then(res=>{
+        if (!res || !res.features || !res.features.length) return hideAutocomplete();
+        acBox.innerHTML = res.features.map((f,i)=>`
+          <div class="autocomplete-suggestion" data-idx="${i}">
+            <span>${f.properties.name ? `<b>${f.properties.name}</b>, ` : ""}${f.properties.city || ""}${f.properties.state ? ', ' + f.properties.state : ""}${f.properties.country ? ', ' + f.properties.country : ""}</span>
+          </div>
+        `).join('');
+        acBox.style.display = 'block';
+        Array.from(acBox.children).forEach((el,i)=>{
+          el.onclick = ()=>selectAutocomplete(res.features[i]);
+        });
+      });
+  }
+  function selectAutocomplete(feature) {
+    hideAutocomplete();
+    // Zoom to result
+    const [lng, lat] = feature.geometry.coordinates;
+    map.setView([lat, lng], 12);
+    // Find and show nearby locations (within ~30km)
+    let visible = [];
+    markers.forEach(marker=>{
+      const d = distanceInKm(lat, lng, marker.locData.lat, marker.locData.lng);
+      if (d < 30) {
+        marker.addTo(map);
+        visible.push(marker.locData);
+      } else {
+        map.removeLayer(marker);
+      }
+    });
+    renderLocationList(visible);
+  }
+  function hideAutocomplete() {
+    acBox.style.display = 'none';
+    acBox.innerHTML = '';
+  }
+  // Hides autocomplete when clicking outside
+  document.addEventListener('click', function(e){
+    if (!acBox.contains(e.target) && e.target!==searchInput) hideAutocomplete();
+  });
+
+  // Haversine for distance (km)
+  function distanceInKm(lat1, lon1, lat2, lon2) {
+    var R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
   // Address clear button show/hide
-  searchInput.addEventListener("input", function() {
-    clearBtn.style.display = this.value ? "flex" : "none";
-  });
-
-  // Press Enter to filter (optional, as input already live filters)
   searchInput.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") filterMarkers();
+    if (e.key === "Enter") hideAutocomplete();
   });
-
-  // Initially hide clear button
   clearBtn.style.display = "none";
 </script>
 </body>
