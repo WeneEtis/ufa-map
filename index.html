@@ -8,9 +8,29 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     body { margin:0; padding:0; font-family: 'Segoe UI', Arial, sans-serif; background:#f7f7f7;}
+
+    .header-bar {
+      width: 100%;
+      box-sizing: border-box;
+      background: #fff;
+      border-bottom: 2px solid #e9e9e9;
+      padding: 0.8em 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.0em;
+      font-weight: bold;
+      color: #d8232a;
+      letter-spacing: 1px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
     .container {
       display: flex;
-      height: 100vh;
+      /*height: 100vh;*/
+      height: calc(100vh - 58px);
       min-height: 520px;
       overflow: hidden;
     }
@@ -23,7 +43,7 @@
     }
     .sidebar.collapsed { width: 0; min-width: 0; padding: 0; }
     .sidebar .expand-btn {
-      position: absolute; right: -22px; top: 26px; width: 40px; height: 40px;
+      position: absolute; right: -22px; top: 10px; width: 40px; height: 40px;
       background: #fff;
       border: 2px solid #e3e3e3;
       box-shadow: 0 1px 8px rgba(0,0,0,0.13);
@@ -35,11 +55,12 @@
     }
     .sidebar .expand-btn:hover { background: #f6f6f6; color: #d8232a; box-shadow: 0 2px 12px rgba(0,0,0,0.18);}
     .sidebar.collapsed .expand-btn { left: 0; right:auto; }
-    .sidebar-content { padding: 32px 18px 12px 18px; transition: opacity 0.3s; }
+    .sidebar-content { padding: 0 18px 8px 18px; transition: opacity 0.3s; }
     .sidebar.collapsed .sidebar-content { opacity: 0; pointer-events: none; }
     .map-search-container {
       position: relative;
       margin-bottom: 18px;
+      margin-top: 0;
       display: flex;
       align-items: center;
     }
@@ -128,9 +149,11 @@
     }
     .location-item strong { color: #d8232a; display: block; font-size: 18px;}
     .location-item small { color: #222; }
-    #map { width: 100%; height: 100vh; min-height: 450px; z-index: 1; }
+    #map { width: 100%; height: 100%; min-height: 450px; z-index: 1; }
     .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #161616; color: #fff; border-radius: 10px;}
     .leaflet-popup-content strong { color: #d8232a;}
+    .leaflet-right { right: 15px !important; }
+    .leaflet-control-zoom { margin-top: 20px !important; }
     @media (max-width: 900px) {
       .container { flex-direction: column; height: 100vh; min-height: 530px; }
       .sidebar { width: 100vw; min-width: 0; max-width: none; border-right: none; border-bottom: 2px solid #eee; }
@@ -138,10 +161,10 @@
       .sidebar .expand-btn { right: 50%; left: 50%; top: -21px; transform: translateX(-50%); border-radius: 11px; }
       #map { height: 70vh; min-height: 340px; }
       .location-list { max-height: 34vh; }
-      .sidebar-content { padding: 18px 10px 6px 10px; }
+      .sidebar-content { padding: 0 10px 6px 10px; }
     }
     @media (max-width: 520px) {
-      .sidebar, .sidebar-content { padding: 7px 3vw 4px 3vw; }
+      .sidebar, .sidebar-content { padding: 0 3vw 4px 3vw; }
       .sidebar { width: 100vw; }
       .map-search-bar { font-size: 16px; }
       .location-item strong { font-size: 16px; }
@@ -151,7 +174,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-<h1>UFA Locations</h1>
+<div class="header-bar">
+    UFA Locations
+</div>
 <div class="container">
   <div class="sidebar" id="sidebar">
     <div class="expand-btn" id="expandBtn" title="Collapse">
@@ -177,7 +202,7 @@
 </div>
 
 <script>
-  // ---- Locations Data (Add more as needed) ----
+  // ---- Locations Data ----
   const locations = [
     { name: "UFA Farm & Ranch Supply Store", address: "200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
     { name: "UFA Petroleum Agency & Cardlock", address: "100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
@@ -349,7 +374,12 @@
   });
 
   // ---- Map Setup ----
-  const map = L.map('map', { scrollWheelZoom: true }).setView([54.0, -113.5], 6);
+  const map = L.map('map', {
+    scrollWheelZoom: true,
+    zoomControl: false // disable default
+  }).setView([54.0, -113.5], 6);
+  // Add zoom controls on top right
+  L.control.zoom({ position: 'topright' }).addTo(map);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors', maxZoom: 18
   }).addTo(map);
