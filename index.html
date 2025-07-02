@@ -1,311 +1,147 @@
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-
-<style>
-  /* Base styles */
-  body { 
-    margin: 0; 
-    padding: 0; 
-    font-family: 'Segoe UI', Arial, sans-serif; 
-    background: #fff;
-    overflow-x: hidden;
-  }
-
-  /* Sidebar container */
-  .sidebar-container {
-    display: flex; 
-    height: 80vh; 
-    max-width: 1300px; 
-    margin: 32px auto 0 auto; 
-    box-shadow: 0 2px 18px rgba(0,0,0,0.09); 
-    border-radius: 18px; 
-    overflow: hidden;
-    border: 2px solid #222;
-    background: #fff;
-  }
-
-  /* Sidebar styles */
-  .sidebar {
-    width: 350px; 
-    min-width: 240px; 
-    max-width: 380px; 
-    background: #fff; 
-    border-right: 2px solid #eee;
-    padding: 0;
-    transition: all 0.3s ease-in-out;
-    position: relative;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .sidebar.collapsed { 
-    width: 0; 
-    min-width: 0; 
-    overflow: hidden;
-  }
-
-  /* Sidebar inner content */
-  .sidebar-inner {
-    padding: 22px 24px 0 24px; 
-    transition: opacity 0.3s;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  .sidebar.collapsed .sidebar-inner { 
-    opacity: 0; 
-    pointer-events: none;
-  }
-
-  /* Expand/collapse button */
-  .expand-btn {
-    position: absolute; 
-    right: -22px; 
-    top: 28px; 
-    background: #fff; 
-    border: 2px solid #d8232a; 
-    color: #d8232a; 
-    width: 38px; 
-    height: 38px; 
-    border-radius: 11px 0 0 11px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 20px; 
-    cursor: pointer; 
-    z-index: 20;
-    box-shadow: 1px 2px 6px rgba(0,0,0,0.07);
-    transition: left 0.3s, right 0.3s;
-  }
-
-  .sidebar.collapsed .expand-btn { 
-    left: 0; 
-    right: auto;
-  }
-
-  /* Search bar */
-  .search-bar {
-    width: 100%; 
-    font-size: 18px; 
-    padding: 12px 46px 12px 18px; 
-    border: none;
-    border-radius: 9px; 
-    outline: none; 
-    color: #222; 
-    background: #f1f5f9;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.03); 
-    text-align: center;
-    margin-bottom: 16px;
-    transition: all 0.3s;
-  }
-
-  /* Clear button */
-  .search-clear-btn {
-    position: absolute; 
-    right: 30px; 
-    top: 32px; 
-    background: #fff; 
-    border: 2px solid #80bfff; 
-    border-radius: 8px;
-    font-size: 18px; 
-    width: 30px; 
-    height: 30px; 
-    color: #888; 
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    z-index: 30;
-    transition: border 0.2s, background 0.2s;
-  }
-
-  .search-clear-btn:hover { 
-    background: #f3f7fa; 
-    color: #d8232a; 
-    border-color: #2196f3; 
-  }
-
-  /* Search suggestions */
-  .suggestions {
-    position: absolute; 
-    left: 24px; 
-    right: 24px; 
-    top: 70px; 
-    z-index: 100;
-    background: #fff; 
-    border: 1px solid #ccd; 
-    border-top: none; 
-    border-radius: 0 0 10px 10px; 
-    max-height: 200px; 
-    overflow-y: auto; 
-    box-shadow: 0 4px 14px rgba(0,0,0,0.14);
-    transition: opacity 0.3s;
-  }
-
-  .suggestion-item { 
-    padding: 11px 12px; 
-    font-size: 15px; 
-    cursor: pointer; 
-    color: #2a3342; 
-    border-bottom: 1px solid #f4f4f4; 
-  }
-
-  .suggestion-item:last-child { 
-    border-bottom: none; 
-  }
-
-  .suggestion-item:hover { 
-    background: #f9eaea; 
-    color: #d8232a; 
-  }
-
-  /* Location list */
-  .location-list { 
-    margin: 16px 0 0 0; 
-    padding: 0; 
-    list-style: none; 
-    flex: 1;
-    overflow-y: auto;
-  }
-
-  .location-list li { 
-    padding: 12px 0 12px 0; 
-    border-bottom: 1px solid #f4f4f4; 
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .location-list li:hover { 
-    background: #f9eaea; 
-  }
-
-  /* Location item styling */
-  .loc-title { 
-    font-weight: 600; 
-    font-size: 16px; 
-    color: #d8232a;
-  }
-
-  .loc-addr { 
-    font-size: 14px; 
-    color: #2a3342; 
-    margin-top: 3px;
-  }
-
-  /* No results message */
-  .no-results { 
-    color: #a4a7b0; 
-    font-size: 14px; 
-    text-align: center; 
-    margin: 16px 0 0 0;
-    padding: 16px;
-  }
-
-  /* Map container */
-  #map { 
-    flex: 1; 
-    min-width: 0; 
-    width: 100%; 
-    height: 80vh; 
-  }
-
-  /* Leaflet popup styling */
-  .leaflet-popup-content-wrapper, .leaflet-popup-tip { 
-    background: #222; 
-    color: #fff;
-    border-radius: 8px;
-  }
-
-  .leaflet-popup-content strong { 
-    color: #d8232a; 
-  }
-
-  /* Responsive styles */
-  @media (max-width:900px){
-    .sidebar-container { 
-      flex-direction: column; 
-      min-width: 99vw;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UFA Locations Map</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    body { margin:0; padding:0; font-family: 'Segoe UI', Arial, sans-serif; background:#f7f7f7;}
+    .container { display: flex; height: 100vh; }
+    .sidebar {
+      width: 350px; min-width: 240px; max-width: 380px; background: #fff;
+      border-right: 2px solid #eee;
+      transition: width 0.3s, min-width 0.3s;
+      position: relative; z-index: 10; display: flex; flex-direction: column;
+      box-shadow: 1px 0 5px rgba(0,0,0,0.03);
     }
-    .sidebar { 
-      width: 100vw; 
-      max-width: 100vw;
+    .sidebar.collapsed { width: 0; min-width: 0; padding: 0; }
+    .sidebar .expand-btn {
+      position: absolute; right: -22px; top: 30px; width: 38px; height: 38px;
+      background: #fff;
+      border: 1.7px solid #e3e3e3;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.13);
+      color: #aaa;
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer; z-index: 20;
+      transition: left 0.3s, right 0.3s, background 0.2s, box-shadow 0.2s;
     }
-  }
-
-  @media (max-width:700px){
-    .sidebar { 
-      width: 100vw;
-      max-width: 100vw;
+    .sidebar .expand-btn:hover {
+      background: #f6f6f6; color: #d8232a;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
     }
-  }
-
-  /* Scrollbar styling for better UX */
-  .location-list::-webkit-scrollbar {
-    width: 8px;
-  }
-  .location-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-  .location-list::-webkit-scrollbar-thumb {
-    background: #d8232a;
-    border-radius: 4px;
-  }
-  .location-list::-webkit-scrollbar-thumb:hover {
-    background: #b01e23;
-  }
-
-  /* Active location highlight */
-  .location-list li.active {
-    background: #f9eaea;
-    font-weight: bold;
-  }
-
-  .location-list li.active .loc-title {
-    color: #b01e23;
-  }
-</style>
-
-
-<div class="sidebar-container">
+    .sidebar.collapsed .expand-btn { left: 0; right:auto; }
+    .sidebar-content { padding: 32px 18px 12px 18px; transition: opacity 0.3s; }
+    .sidebar.collapsed .sidebar-content { opacity: 0; pointer-events: none; }
+    .map-search-container {
+      position: relative;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+    }
+    .map-search-bar {
+      width: 100%;
+      font-size: 18px;
+      padding: 12px 44px 12px 16px;
+      border: 2px solid #d8232a;
+      border-radius: 10px;
+      outline: none;
+      color: #222;
+      background: #f2f6fa;
+      box-sizing: border-box;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .map-search-bar:focus { border-color: #000; }
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #fff;
+      border: 2px solid #86b7fe;
+      font-size: 18px;
+      color: #757575;
+      cursor: pointer;
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: background 0.2s, border 0.2s;
+    }
+    .search-clear-btn:hover {
+      background: #e3eafc;
+      border-color: #d8232a;
+      color: #d8232a;
+    }
+    .location-list {
+      margin: 0; padding: 0; list-style: none;
+      overflow-y: auto; max-height: 62vh; /* Sidebar scroll! */
+      transition: max-height 0.3s;
+      border-radius: 8px;
+    }
+    .location-item {
+      padding: 13px 7px 13px 8px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: background 0.15s;
+      background: #fff;
+    }
+    .location-item:hover, .location-item.active {
+      background: #fbeaec;
+    }
+    .location-item strong { color: #d8232a; display: block; font-size: 17px;}
+    .location-item small { color: #222; }
+    /* Responsive: collapse sidebar below 700px */
+    @media (max-width: 850px) {
+      .sidebar { width: 100vw; min-width: 0; max-width: none; }
+      .container { flex-direction: column; }
+      #map { height: 300px; min-height: 220px; }
+    }
+    #map { width: 100%; height: 100vh; min-height: 450px; z-index: 1; }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: #161616;
+      color: #fff;
+      border-radius: 10px;
+    }
+    .leaflet-popup-content strong {
+      color: #d8232a;
+    }
+  </style>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div class="container">
   <div class="sidebar" id="sidebar">
-    <div class="expand-btn" id="expandBtn" onclick="toggleSidebar()" title="Expand/collapse sidebar">&#9776;</div>
-    <div class="sidebar-inner">
-      <div style="position:relative;">
-        <input           type="text"
+    <div class="expand-btn" id="expandBtn" title="Collapse">
+      <span style="font-size:23px; color:#bbb;">&#8249;</span>
+    </div>
+    <div class="sidebar-content">
+      <div class="map-search-container">
+        <input
+          type="text"
           id="addressSearch"
-          class="search-bar"
+          class="map-search-bar"
           placeholder="Enter an address"
           autocomplete="off"
-          aria-label="Search locations"
-        >
-        <button class="search-clear-btn" id="clearBtn" onclick="clearSearch()" style="display:none;" title="Clear search">&#10005;</button>
-        <div id="suggestions" class="suggestions" style="display:none;"></div>
+          oninput="filterMarkers()"
+        />
+        <button class="search-clear-btn" onclick="clearSearch()" style="display:none;" id="clearBtn">&times;</button>
       </div>
-      <ul id="locList" class="location-list" aria-live="polite"></ul>
-      <div id="noResults" class="no-results" style="display:none;">No matching locations found.</div>
+      <ul class="location-list" id="locationList"></ul>
     </div>
   </div>
-  <div id="map" aria-label="Map"></div>
+  <div id="map"></div>
 </div>
 
-
 <script>
-// Configuration settings
-const CONFIG = {
-  DEFAULT_ZOOM: 6,
-  SEARCH_RADIUS: 70, // km
-  DEBOUNCE_DELAY: 300,
-  SIDEBAR_WIDTH: 350,
-  BASE_LAT: 54.0,
-  BASE_LNG: -113.5
-};
-
-// UFA locations data
-const locations = [
+  // Demo locations (replace with your data)
+  const locations = [
     { name: "UFA Farm & Ranch Supply Store", address: "200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
     { name: "UFA Petroleum Agency & Cardlock", address: "100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
     { name: "UFA Farm & Ranch Supply Store", address: "3922 53 Street, Athabasca, AB, T9S 1B3", lat: 54.705852, lng: -113.2963253 },
@@ -466,317 +302,114 @@ const locations = [
     { name: "UFA Petroleum Agency & Cardlock", address: "476 Secondary Highway 726, Worsley, AB, T0H 3W0", lat: 56.5076803, lng: -119.1331451 },
     { name: "UFA Petroleum Agency & Cardlock", address: "309 Fitchner Road, Yorkton, SK, S3N 2W7", lat: 51.2239086, lng: -102.4907083 }
 ];
-// Initialize map
-const map = L.map('map', { 
-  scrollWheelZoom: true 
-}).setView([CONFIG.BASE_LAT, CONFIG.BASE_LNG], CONFIG.DEFAULT_ZOOM);
-
-// Add OpenStreetMap tile layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors',
-  maxZoom: 18
-}).addTo(map);
-
-// Create red marker icon
-const redIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Create and store markers
-const markers = locations.map((loc, i) => {
-  const marker = L.marker([loc.lat, loc.lng], { icon: redIcon })
-    .bindPopup(`<strong>${loc.name}</strong><br>${loc.address}`);
-  
-  marker.locData = loc;
-  marker.idx = i;
-  
-  marker.on('click', () => highlightLoc(i));
-  
-  marker.addTo(map);
-  return marker;
-});
-
-// Render location list
-function renderList(filtered = locations) {
-  const ul = document.getElementById("locList");
-  ul.innerHTML = "";
-  
-  // Show no results message if needed
-  if (!filtered.length) {
-    document.getElementById('noResults').style.display = 'block';
-    return;
-  }
-  
-  document.getElementById('noResults').style.display = 'none';
-  
-  // Render filtered locations
-  filtered.forEach((loc) => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <span class="loc-title">${loc.name}</span><br>
-      <span class="loc-addr">${loc.address}</span>
-    `;
-    
-    li.onclick = () => {
-      markers[loc.idx].openPopup();
-      map.setView([loc.lat, loc.lng], 14);
-      highlightLoc(loc.idx);
-    };
-    
-    ul.appendChild(li);
-  });
-}
-
-// Toggle sidebar
-function toggleSidebar() {
-  const sb = document.getElementById("sidebar");
-  sb.classList.toggle("collapsed");
-  
-  const btn = document.getElementById("expandBtn");
-  btn.innerHTML = sb.classList.contains("collapsed") ? '&#9776;' : '&#10094;';
-  
-  // Wait for transition to complete before invalidating map size
-  setTimeout(() => {
-    map.invalidateSize();
-    if (!sb.classList.contains("collapsed")) {
-      fitAll();
-    }
-  }, 350);
-}
-
-// Handle search input
-function debounce(func, delay) {
-  let timer;
-  return function (...args) {
-    clearTimeout(timer);
-    timer = setTimeout(() => func.apply(this, args), delay);
-  };
-}
-
-// Focus on nearby locations
-function focusNearby(lat, lng, radius = CONFIG.SEARCH_RADIUS) {
-  // Use Haversine formula for accurate distance calculation
-  const filtered = locations.filter(loc => {
-    const R = 6371; // Earth's radius in km
-    const Δlat = (loc.lat - lat) * Math.PI / 180;
-    const Δlng = (loc.lng - lng) * Math.PI / 180;
-    const a = Math.sin(Δlat/2) * Math.sin(Δlat/2) +
-              Math.cos(lat * Math.PI / 180) * Math.cos(loc.lat * Math.PI / 180) * 
-              Math.sin(Δlng/2) * Math.sin(Δlng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c < radius;
+  // Red marker icon
+  const redIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
   });
 
-  // Update the location list and map view
-  if (filtered.length) {
-    renderList(filtered);
-    const nearbyMarkers = filtered.map(loc => markers[loc.idx]);
-    
-    // Create feature group for bounds calculation
-    const group = L.featureGroup(nearbyMarkers);
-    
-    // Fit map to bounds of nearby locations
-    map.fitBounds(group.getBounds().pad(0.22));
-    
-    // Find and open nearest marker
-    let minIdx = 0, minDist = Infinity;
-    nearbyMarkers.forEach((marker, i) => {
-      const loc = marker.locData;
-      const R = 6371;
-      const Δlat = (loc.lat - lat) * Math.PI / 180;
-      const Δlng = (loc.lng - lng) * Math.PI / 180;
-      const a = Math.sin(Δlat/2) * Math.sin(Δlat/2) +
-                Math.cos(lat * Math.PI / 180) * Math.cos(loc.lat * Math.PI / 180) * 
-                Math.sin(Δlng/2) * Math.sin(Δlng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const distance = R * c;
-      
-      if (distance < minDist) {
-        minDist = distance;
-        minIdx = i;
-      }
-    });
-    
-    // Open popup for nearest location
-    if (filtered[minIdx]) {
-      const nearestMarker = markers[filtered[minIdx].idx];
-      nearestMarker.openPopup();
-      map.setView([filtered[minIdx].lat, filtered[minIdx].lng], 14);
-    }
-  } else {
-    renderList([]);
-    document.getElementById('noResults').textContent = "No nearby locations found.";
-  }
-}
+  // Initialize map
+  const map = L.map('map', { scrollWheelZoom: true }).setView([54.0, -113.5], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors', maxZoom: 18
+  }).addTo(map);
 
-// Handle search input
-function handleSearch() {
-  const input = document.getElementById('addressSearch');
-  const sugDiv = document.getElementById('suggestions');
-  const value = input.value.trim();
-  document.getElementById('clearBtn').style.display = value ? 'flex' : 'none';
-  
-  if (!value) {
-    sugDiv.style.display = "none";
-    renderList();
-    fitAll();
-    return;
-  }
-  
-  // Photon API with country restriction to Canada
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(value)}&lang=en&limit=6&country=CA`;
-  
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      sugDiv.innerHTML = "";
-      
-      if (!data.features.length) {
-        sugDiv.style.display = "none";
-        return;
-      }
-      
-      // Create suggestion items
-      data.features.forEach(f => {
-        const d = document.createElement('div');
-        d.className = "suggestion-item";
-        d.textContent = [f.properties.name, f.properties.city, f.properties.state, f.properties.country]
-          .filter(Boolean).join(', ');
-          
-        d.onclick = () => {
-          input.value = d.textContent;
-          sugDiv.style.display = "none";
-          document.getElementById('clearBtn').style.display = 'flex';
-          focusNearby(f.geometry.coordinates[1], f.geometry.coordinates[0]);
-          highlightLocationInList(f.geometry.coordinates[1], f.geometry.coordinates[0]);
-        };
-        
-        sugDiv.appendChild(d);
-      });
-      
-      sugDiv.style.display = data.features.length ? "block" : "none";
-    })
-    .catch(err => {
-      console.error('Search error:', err);
-      sugDiv.innerHTML = "<div class='suggestion-item' style='color: #d8232a;'>Error: Could not search locations</div>";
-      sugDiv.style.display = "block";
-    });
-}
-
-// Debounced search handler
-const debouncedSearch = debounce(handleSearch, CONFIG.DEBOUNCE_DELAY);
-
-// Event listener for search input
-document.getElementById('addressSearch').addEventListener('input', debouncedSearch);
-
-// Clear search functionality
-function clearSearch() {
-  const input = document.getElementById('addressSearch');
-  input.value = "";
-  document.getElementById('suggestions').style.display = "none";
-  document.getElementById('clearBtn').style.display = 'none';
-  renderList();
-  fitAll();
-  
-  // Expand sidebar on small screens
-  if (window.innerWidth <= 700) {
-    const sb = document.getElementById("sidebar");
-    if (sb.classList.contains("collapsed")) toggleSidebar();
-  }
-}
-
-// Fit map to all markers
-function fitAll() {
-  if (!markers.length) return;
-  
-  const group = L.featureGroup(markers);
-  const bounds = group.getBounds().pad(0.12);
-  
-  // Fit to bounds if valid
-  if (bounds.isValid()) {
-    map.fitBounds(bounds);
-  } else {
-    // Fallback if bounds are invalid
-    map.setView([CONFIG.BASE_LAT, CONFIG.BASE_LNG], CONFIG.DEFAULT_ZOOM);
-  }
-}
-
-// Highlight location in list
-function highlightLocationInList(lat, lng) {
-  const R = 6371; // Earth's radius in km
-  let minIdx = 0, minDist = Infinity;
-  
-  // Find closest location
+  // Markers
+  let markers = [];
   locations.forEach((loc, i) => {
-    const Δlat = (loc.lat - lat) * Math.PI / 180;
-    const Δlng = (loc.lng - lng) * Math.PI / 180;
-    const a = Math.sin(Δlat/2) * Math.sin(Δlat/2) +
-              Math.cos(lat * Math.PI / 180) * Math.cos(loc.lat * Math.PI / 180) * 
-              Math.sin(Δlng/2) * Math.sin(Δlng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c;
-    
-    if (distance < minDist) {
-      minDist = distance;
-      minIdx = i;
-    }
+    const marker = L.marker([loc.lat, loc.lng], {icon: redIcon})
+      .bindPopup(`<strong>${loc.name}</strong><br>${loc.address}`);
+    marker.locData = loc;
+    marker.idx = i;
+    marker.on('click', () => highlightSidebar(i));
+    marker.addTo(map);
+    markers.push(marker);
   });
-  
-  // Highlight the closest location
-  const listItems = document.querySelectorAll("#locList li");
-  listItems.forEach((item, idx) => {
-    if (idx === minIdx) {
-      item.classList.add("active");
-      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-      item.classList.remove("active");
-    }
-  });
-}
 
-// Highlight location when marker is clicked
-function highlightLoc(i) {
-  const sidebar = document.getElementById("sidebar");
-  const btn = document.getElementById("expandBtn");
-  
-  // Expand sidebar on small screens
-  if (window.innerWidth <= 700 && sidebar.classList.contains("collapsed")) {
-    toggleSidebar();
-  }
-  
-  // Scroll to location in list
-  const listItems = document.querySelectorAll("#locList li");
-  if (listItems[i]) {
-    listItems[i].scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'nearest', 
-      inline: 'center' 
-    });
-    
-    // Highlight the location
-    listItems.forEach((item, idx) => {
-      item.classList.toggle("active", idx === i);
+  // Populate sidebar list
+  function renderLocationList(filtered = locations) {
+    const ul = document.getElementById('locationList');
+    ul.innerHTML = "";
+    filtered.forEach((loc, i) => {
+      const li = document.createElement("li");
+      li.className = "location-item";
+      li.innerHTML = `<strong>${loc.name}</strong><small>${loc.address}</small>`;
+      li.onclick = () => {
+        map.setView([loc.lat, loc.lng], 14);
+        markers[loc.idx ?? i].openPopup();
+        highlightSidebar(loc.idx ?? i);
+      };
+      li.dataset.idx = loc.idx ?? i;
+      ul.appendChild(li);
     });
   }
-}
 
-// Close suggestions when clicking outside
-document.addEventListener('click', e => {
-  const input = document.getElementById('addressSearch');
-  const sugDiv = document.getElementById('suggestions');
-  
-  if (e.target !== input && !sugDiv.contains(e.target)) {
-    sugDiv.style.display = "none";
+  // Highlight sidebar row
+  function highlightSidebar(idx) {
+    document.querySelectorAll('.location-item').forEach(el=>el.classList.remove('active'));
+    const row = document.querySelector(`.location-item[data-idx="${idx}"]`);
+    if(row) row.classList.add('active');
   }
-});
 
-// Initial fit to all markers
-document.addEventListener('DOMContentLoaded', () => {
-  fitAll();
-});
+  renderLocationList();
+
+  // Sidebar expand/collapse
+  function toggleSidebar() {
+    const sb = document.getElementById("sidebar");
+    sb.classList.toggle("collapsed");
+    const btn = document.getElementById("expandBtn");
+    btn.innerHTML = sb.classList.contains("collapsed")
+      ? '<span style="font-size:23px; color:#bbb;">&#8250;</span>'
+      : '<span style="font-size:23px; color:#bbb;">&#8249;</span>';
+    setTimeout(()=>map.invalidateSize(),350);
+  }
+  document.getElementById("expandBtn").onclick = toggleSidebar;
+
+  // Search/filter logic
+  const searchInput = document.getElementById("addressSearch");
+  const clearBtn = document.getElementById("clearBtn");
+  function filterMarkers() {
+    const val = searchInput.value.toLowerCase().trim();
+    clearBtn.style.display = val ? "flex" : "none";
+    let filtered = [];
+    markers.forEach((marker, i) => {
+      const text = (marker.locData.name + " " + marker.locData.address).toLowerCase();
+      if (!val || text.includes(val)) {
+        marker.addTo(map);
+        filtered.push(marker.locData);
+      } else {
+        map.removeLayer(marker);
+      }
+    });
+    renderLocationList(filtered);
+    // Optionally zoom to first visible marker
+    if (filtered.length === 1) {
+      map.setView([filtered[0].lat, filtered[0].lng], 13);
+      markers[filtered[0].idx ?? locations.indexOf(filtered[0])].openPopup();
+    }
+  }
+  function clearSearch() {
+    searchInput.value = "";
+    clearBtn.style.display = "none";
+    filterMarkers();
+  }
+
+  // Address clear button show/hide
+  searchInput.addEventListener("input", function() {
+    clearBtn.style.display = this.value ? "flex" : "none";
+  });
+
+  // Press Enter to filter (optional, as input already live filters)
+  searchInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") filterMarkers();
+  });
+
+  // Initially hide clear button
+  clearBtn.style.display = "none";
 </script>
+</body>
+</html>
