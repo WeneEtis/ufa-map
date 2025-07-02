@@ -1,44 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" >
+  <meta charset="UTF-8">
   <title>UFA Locations Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" >
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+  
   
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: Arial, sans-serif;
-    }
+    body, html { margin: 0; padding: 0; height: 100%; }
     #container {
       display: flex;
       max-width: 1200px;
       margin: 40px auto;
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 4px 32px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.1);
     }
     #sidebar {
       width: 350px;
-      min-width: 250px;
-      max-width: 400px;
       background: #fff;
       padding: 24px 10px 10px 18px;
       border-right: 2px solid #d8232a;
       height: 600px;
       overflow-y: auto;
-      position: relative;
       transition: margin-left 0.3s ease;
       z-index: 20;
     }
     #sidebar.collapsed {
       margin-left: -350px;
-      min-width: 0;
       padding: 0;
       border: none;
       overflow: hidden;
@@ -52,7 +48,6 @@
       width: 32px;
       height: 60px;
       border-radius: 0 10px 10px 0;
-      border: none;
       cursor: pointer;
       font-size: 20px;
       display: flex;
@@ -80,7 +75,16 @@
       border-radius: 8px;
       outline: none;
       margin-bottom: 18px;
-      position: relative;
+    }
+    #resetButton {
+      width: 95%;
+      margin-top: 10px;
+      background: #d8232a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
     }
     .suggestions {
       position: absolute;
@@ -123,33 +127,11 @@
       font-size: 16px;
     }
     @media (max-width: 900px) {
-      #container {
-        flex-direction: column;
-      }
-      #sidebar,
-      #map {
-        width: 100%;
-        min-width: 0;
-        height: 400px;
-      }
-      #sidebar.collapsed {
-        margin-left: -100vw;
-      }
-      #sidebar .sidebar-toggle,
-      #sidebar.collapsed .sidebar-toggle {
-        top: 5px;
-        right: -32px;
-        height: 38px;
-        width: 32px;
-        font-size: 18px;
-      }
-    }
-    @media (max-width: 600px) {
-      #sidebar {
-        padding: 12px 5px 5px 5px;
-      }
-      #addressSearch {
-        font-size: 15px;
+      #container { flex-direction: column; }
+      #sidebar, #map { width: 100%; height: 400px; }
+      #sidebar.collapsed { margin-left: -100vw; }
+      #sidebar .sidebar-toggle, #sidebar.collapsed .sidebar-toggle {
+        top: 5px; right: -32px; height: 38px; width: 32px; font-size: 18px;
       }
     }
   </style>
@@ -158,8 +140,9 @@
   <div id="container">
     <div id="sidebar">
       <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">&lt;</button>
-      <input id="addressSearch" placeholder="Search for an address in Canada..." autocomplete="off" >
+      <input id="addressSearch" placeholder="Search for an address in Canada..." autocomplete="off">
       <div id="suggestions" class="suggestions" style="display: none;"></div>
+      <button id="resetButton">Reset</button>
       <ul id="locationList" class="location-list"></ul>
     </div>
     <div id="map"></div>
@@ -167,6 +150,10 @@
 
   
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
   <script>
     // Red marker icon
     const redIcon = L.icon({
@@ -185,10 +172,10 @@
 
     // Add OpenStreetMap tile layer (no attribution)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '' // Hides attribution
+      attribution: ''
     }).addTo(map);
 
-    // UFA locations array (same as your data)
+    // UFA locations array
     const locations = [
     { name: "UFA Farm & Ranch Supply Store", address: "200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
     { name: "UFA Petroleum Agency & Cardlock", address: "100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
@@ -351,17 +338,20 @@
     { name: "UFA Petroleum Agency & Cardlock", address: "309 Fitchner Road, Yorkton, SK, S3N 2W7", lat: 51.2239086, lng: -102.4907083 }
 ];
 
-    // Add all markers to the map
-    const markers = locations.map(loc => 
-      L.marker([loc.lat, loc.lng], { icon: redIcon })
-        .bindPopup(`<strong>${loc.name}</strong><br>${loc.address}`)
-        .on('add', () => this.fire('search_location', { location: loc }))
-    );
+    // Create markers with location reference
+    const markers = locations.map(loc => {
+      const marker = L.marker([loc.lat, loc.lng], { icon: redIcon })
+        .bindPopup(`<strong>${loc.name}</strong><br>${loc.address}`);
+      marker.locationData = loc;
+      return marker;
+    });
 
-    // Add all markers to the map initially
-    markers.forEach(marker => marker.addTo(map));
+    // Initialize cluster group with all locations
+    let currentCluster = L.markerClusterGroup();
+    currentCluster.addLayers(markers);
+    map.addLayer(currentCluster);
 
-    // Render full location list in sidebar
+    // Render full location list
     const locationList = document.getElementById("locationList");
     function renderList(list) {
       locationList.innerHTML = "";
@@ -385,13 +375,35 @@
       btn.textContent = sidebar.classList.contains("collapsed") ? "&gt;" : "&lt;";
     };
 
-    // Auto-focus search bar on load
+    // Auto-focus search bar
     window.addEventListener('load', () => {
       const searchInput = document.getElementById('addressSearch');
       if (searchInput) searchInput.focus();
     });
 
-    // Address search with Photon API
+    // Reset map to show all locations
+    window.resetMap = function() {
+      const input = document.getElementById('addressSearch');
+      input.value = '';
+      const sugDiv = document.getElementById('suggestions');
+      sugDiv.style.display = 'none';
+      
+      // Remove old cluster
+      map.removeLayer(currentCluster);
+      
+      // Create new cluster with all markers
+      currentCluster = L.markerClusterGroup();
+      currentCluster.addLayers(markers);
+      map.addLayer(currentCluster);
+      
+      // Reset sidebar
+      renderList(locations);
+      
+      // Reset map view
+      map.setView([54.0, -113.5], 6);
+    };
+
+    // Photon address search
     const input = document.getElementById('addressSearch');
     const sugDiv = document.getElementById('suggestions');
 
@@ -402,7 +414,6 @@
         return;
       }
 
-      // Photon API for Canadian addresses
       const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&lang=en&limit=6&country=CA`;
       const res = await fetch(url);
       const data = await res.json();
@@ -411,7 +422,7 @@
       data.features.forEach(f => {
         const div = document.createElement("div");
         div.className = "suggestion-item";
-        div.textContent = `${f.properties.name || ""} ${f.properties.city || ""} ${f.properties.state || ""} ${f.properties.country || ""}`;
+        div.textContent = `${f.properties.name || ''} ${f.properties.city || ''} ${f.properties.state || ''} ${f.properties.country || ''}`;
         div.onclick = () => {
           input.value = div.textContent;
           sugDiv.style.display = "none";
@@ -426,36 +437,32 @@
       sugDiv.style.display = data.features.length ? "block" : "none";
     });
 
-    // Hide suggestions when clicking outside
+    // Hide suggestions on outside click
     document.addEventListener('click', (e) => {
       if (e.target !== input && !sugDiv.contains(e.target)) {
         sugDiv.style.display = "none";
       }
     });
 
-    // Reset to full list when search is cleared
-    input.addEventListener('change', function() {
-      if (!this.value.trim()) {
-        markers.forEach(marker => marker.addTo(map));
-        renderList(locations);
-        map.setView([54.0, -113.5], 6);
-      }
-    });
-
-    // Show nearby UFA locations (within 80km)
+    // Show nearby UFA locations
     function showNearby(lat, lng) {
-      const nearby = locations.filter(loc => getDistance(lat, lng, loc.lat, loc.lng) < 80);
-      markers.forEach(marker => {
-        const loc = marker._latlng;
-        if (nearby.some(n => n.lat === loc.lat && n.lng === loc.lng)) {
-          marker.addTo(map);
-        } else {
-          map.removeLayer(marker);
-        }
-      });
-      renderList(nearby);
-      if (nearby.length > 0) {
-        const bounds = L.latLngBounds(nearby.map(loc => L.latLng(loc.lat, loc.lng)));
+      const nearbyLocs = locations.filter(loc => getDistance(lat, lng, loc.lat, loc.lng) < 80);
+      const nearbyMarkers = nearbyLocs.map(loc => markers[locations.indexOf(loc)]);
+      
+      // Remove old cluster
+      map.removeLayer(currentCluster);
+      
+      // Create new cluster with filtered markers
+      currentCluster = L.markerClusterGroup();
+      currentCluster.addLayers(nearbyMarkers);
+      map.addLayer(currentCluster);
+      
+      // Update sidebar
+      renderList(nearbyLocs);
+      
+      // Fit map to bounds
+      if (nearbyMarkers.length > 0) {
+        const bounds = L.latLngBounds(nearbyMarkers.map(m => m.getLatLng()));
         map.fitBounds(bounds.pad(0.2));
       }
     }
@@ -463,13 +470,11 @@
     // Haversine distance calculation (km)
     function getDistance(lat1, lng1, lat2, lng2) {
       function toRad(x) { return x * Math.PI / 180; }
-      const R = 6371; // Earth radius in km
+      const R = 6371;
       const dLat = toRad(lat2 - lat1);
       const dLng = toRad(lng2 - lng1);
-      const a = Math.sin(dLat/2)**2 + 
-                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
   </script>
 </body>
