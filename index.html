@@ -1,173 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>UFA Locations Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Leaflet CSS/JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+<style>
+  body { margin:0; padding:0; font-family: 'Segoe UI', Arial, sans-serif; background: #fff; }
+  .sidebar-container {
+    display: flex; height: 80vh; max-width: 1300px; margin: 32px auto 0 auto; box-shadow: 0 2px 18px rgba(0,0,0,0.09); border-radius: 18px; overflow: hidden;
+    border: 2px solid #222; background: #fff;
+  }
+  .sidebar {
+    width: 350px; min-width: 240px; max-width: 380px; background: #fff; border-right: 2px solid #eee;
+    padding: 0 0 0 0; transition: width 0.3s, min-width 0.3s;
+    position: relative; z-index: 10; display: flex; flex-direction: column;
+  }
+  .sidebar.collapsed { width: 0; min-width: 0; padding: 0; }
+  .sidebar .sidebar-inner { padding: 22px 24px 0 24px; transition: opacity 0.3s; }
+  .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events:none; }
+  .sidebar .expand-btn {
+    position: absolute; right: -22px; top: 28px; background: #fff; border: 2px solid #d8232a; color: #d8232a; width: 38px; height: 38px; border-radius: 11px 0 0 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; z-index: 20;
+    box-shadow: 1px 2px 6px rgba(0,0,0,0.07); transition: left 0.3s;
+  }
+  .sidebar.collapsed .expand-btn { left: 0; right:auto;}
+  .search-wrapper { position:relative; width:100%; }
+  .search-bar {
+    width: 100%; font-size: 18px; padding: 12px 46px 12px 18px; border: none;
+    border-radius: 9px; outline: none; color: #222; background: #f1f5f9;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.03); text-align: center;
+    margin-bottom: 16px;
+  }
+  .search-clear-btn {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: #fff; border: 2px solid #80bfff; border-radius: 8px;
+    font-size: 18px; width: 30px; height: 30px; color: #888; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; z-index: 30;
+    transition: border 0.2s, background 0.2s;
+  }
+  .search-clear-btn:hover { background: #f3f7fa; color: #d8232a; border-color: #2196f3; }
+  .suggestions {
+    position: absolute; left: 0; right: 0; top: 100%; z-index: 100;
+    background: #fff; border: 1px solid #ccd; border-top: none; border-radius: 0 0 10px 10px; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+  }
+  .suggestion-item { padding: 11px 12px; font-size: 15px; cursor: pointer; color: #2a3342; border-bottom: 1px solid #f4f4f4; }
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover { background: #f9eaea; color: #d8232a; }
 
-  <style>
-    body, html { margin: 0; padding: 0; height: 100%; }
-    #container {
-      display: flex;
-      max-width: 1200px;
-      margin: 40px auto;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.1);
-    }
-    #sidebar {
-      width: 350px;
-      background: #fff;
-      padding: 24px 10px 10px 18px;
-      border-right: 2px solid #d8232a;
-      height: 600px;
-      overflow-y: auto;
-      transition: margin-left 0.3s ease;
-      z-index: 20;
-    }
-    #sidebar.collapsed {
-      margin-left: -350px;
-      padding: 0;
-      border: none;
-      overflow: hidden;
-    }
-    #map {
-      flex: 1;
-      height: 600px;
-      background: #f5f5f5;
-      transition: width 0.3s;
-    }
-    #searchContainer {
-      position: relative;
-      width: 95%;
-      margin-bottom: 18px;
-    }
-    #addressSearch {
-      width: 100%;
-      font-size: 18px;
-      padding: 12px 40px 12px 40px;
-      border: 2px solid #d8232a;
-      border-radius: 8px;
-      outline: none;
-    }
-    #searchButton {
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    #clearButton {
-      position: absolute;
-      top: 50%;
-      right: 40px;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    #toggleButton {
-      position: absolute;
-      top: 50%;
-      left: 10px;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    .suggestions {
-      position: absolute;
-      z-index: 100;
-      background: #fff;
-      width: 92%;
-      border: 1px solid #ccc;
-      max-height: 170px;
-      overflow-y: auto;
-      border-radius: 0 0 8px 8px;
-      top: 56px;
-      left: 0;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .suggestion-item {
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    .suggestion-item:hover {
-      background: #fde6e7;
-    }
-    .location-list {
-      padding-left: 0;
-      margin: 0;
-      list-style: none;
-    }
-    .location-list li {
-      border-bottom: 1px solid #eee;
-      margin-bottom: 9px;
-      padding-bottom: 9px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .location-list li:hover {
-      background: #fde6e7;
-    }
-    .location-list strong {
-      color: #d8232a;
-      font-size: 16px;
-    }
-    @media (max-width: 900px) {
-      #container { flex-direction: column; }
-      #sidebar, #map { width: 100%; height: 400px; }
-      #sidebar.collapsed { margin-left: -100vw; }
-    }
-  </style>
-</head>
-<body>
-  <div id="container">
-    <div id="sidebar">
-      <div id="searchContainer">
-        <button id="toggleButton" onclick="toggleSidebar()"><img src="https://img.icons8.com/ios-glyphs/30/000000/menu--v1.png" alt="Menu"></button>
-        <input id="addressSearch" placeholder="Search for an address in Canada..." autocomplete="off">
-        <button id="searchButton" onclick="performSearch()"><img src="https://img.icons8.com/ios-glyphs/30/000000/search--v1.png" alt="Search"></button>
-        <button id="clearButton" onclick="clearSearch()" style="display: none;"><img src="https://img.icons8.com/ios-glyphs/30/000000/multiply.png" alt="Clear"></button>
+  .location-list { margin: 16px 0 0 0; padding: 0; list-style: none; }
+  .location-list li { padding: 12px 0 12px 0; border-bottom: 1px solid #f4f4f4; cursor:pointer;}
+  .location-list li:hover { background: #f9eaea; }
+  .loc-title { font-weight: 600; font-size: 16px; color: #d8232a;}
+  .loc-addr { font-size: 14px; color: #2a3342; margin-top: 3px;}
+  .no-results { color: #a4a7b0; font-size: 14px; text-align: center; margin: 16px 0 0 0;}
+  .sidebar.collapsed { width: 0; min-width: 0; }
+  .sidebar.collapsed .sidebar-inner, .sidebar.collapsed .suggestions { display:none;}
+  .sidebar.collapsed .expand-btn { left: 0; right: auto;}
+  @media (max-width:900px){ .sidebar-container { flex-direction: column; min-width: 99vw;}}
+  @media (max-width:700px){
+    .sidebar-container { flex-direction: column; min-width: 100vw; }
+    .sidebar { max-width: 100vw; width:100vw;}
+    .sidebar.collapsed {width: 0;}
+  }
+  #map { flex:1; min-width:0; width:100%; height: 80vh; }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #222; color: #fff; border-radius: 8px;}
+  .leaflet-popup-content strong { color: #d8232a; }
+</style>
+
+<div class="sidebar-container">
+  <div class="sidebar" id="sidebar">
+    <div class="expand-btn" id="expandBtn" title="Expand/collapse sidebar">&#60;</div>
+    <div class="sidebar-inner">
+      <div class="search-wrapper">
+        <input
+          type="text"
+          id="addressSearch"
+          class="search-bar"
+          placeholder="Enter an address"
+          autocomplete="off"
+        />
+        <button class="search-clear-btn" id="clearBtn" onclick="clearSearch()" style="display:none;">&times;</button>
+        <div id="suggestions" class="suggestions" style="display:none;"></div>
       </div>
-      <div id="suggestions" class="suggestions" style="display: none;"></div>
-      <ul id="locationList" class="location-list"></ul>
+      <ul id="locList" class="location-list"></ul>
+      <div id="noResults" class="no-results" style="display:none;">No matching locations found.</div>
     </div>
-    <div id="map"></div>
   </div>
+  <div id="map"></div>
+</div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-  <script>
-    // Red marker icon
-    const redIcon = L.icon({
-      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41]
-    });
-
-    // Initialize map (hide Leaflet attribution)
-    const map = L.map('map', {
-      attributionControl: false
-    }).setView([54.0, -113.5], 6);
-
-    // Add OpenStreetMap tile layer (no attribution)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: ''
-    }).addTo(map);
-
-    // UFA locations array
-    const locations = [
+<script>
+// ------------ Locations array: replace with your full data -------------
+const locations = [
     { name: "UFA Farm & Ranch Supply Store", address: "200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
     { name: "UFA Petroleum Agency & Cardlock", address: "100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
     { name: "UFA Farm & Ranch Supply Store", address: "3922 53 Street, Athabasca, AB, T9S 1B3", lat: 54.705852, lng: -113.2963253 },
@@ -328,172 +249,113 @@
     { name: "UFA Petroleum Agency & Cardlock", address: "476 Secondary Highway 726, Worsley, AB, T0H 3W0", lat: 56.5076803, lng: -119.1331451 },
     { name: "UFA Petroleum Agency & Cardlock", address: "309 Fitchner Road, Yorkton, SK, S3N 2W7", lat: 51.2239086, lng: -102.4907083 }
 ];
+// ----------------------------------------------------------------------
 
-    // Create markers with location reference
-    const markers = locations.map(loc => {
-      const marker = L.marker([loc.lat, loc.lng], { icon: redIcon })
-        .bindPopup(`<strong>${loc.name}</strong><br>${loc.address}`);
-      marker.locationData = loc;
-      return marker;
-    });
+const redIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
-    // Initialize cluster group with all locations
-    let currentCluster = L.markerClusterGroup();
-    currentCluster.addLayers(markers);
-    map.addLayer(currentCluster);
+const map = L.map('map', { scrollWheelZoom:true }).setView([54.0, -113.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors', maxZoom: 18
+}).addTo(map);
 
-    // Render full location list
-    const locationList = document.getElementById("locationList");
-    function renderList(list) {
-      locationList.innerHTML = "";
-      list.forEach((loc, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = `<strong>${loc.name}</strong><br>${loc.address}`;
-        li.onclick = () => {
-          map.setView([loc.lat, loc.lng], 13);
-          markers[i].openPopup();
-        };
-        locationList.appendChild(li);
-      });
-    }
-    renderList(locations);
+let markers = [];
+locations.forEach((loc, i) => {
+  const marker = L.marker([loc.lat, loc.lng], {icon: redIcon})
+    .bindPopup(`<strong>${loc.name}</strong><br>${loc.address}`);
+  marker.locData = loc;
+  marker.idx = i;
+  marker.on('click', ()=>highlightLoc(i));
+  marker.addTo(map);
+  markers.push(marker);
+});
 
-    // Sidebar toggle
-    window.toggleSidebar = function() {
-      const sidebar = document.getElementById("sidebar");
-      sidebar.classList.toggle("collapsed");
-      const btn = document.getElementById('toggleButton');
-      btn.innerHTML = sidebar.classList.contains("collapsed") ? '<img src="https://img.icons8.com/ios-glyphs/30/000000/chevron-right.png" alt="Expand">' : '<img src="https://img.icons8.com/ios-glyphs/30/000000/menu--v1.png" alt="Menu">';
+function renderList(filtered=locations) {
+  const ul = document.getElementById("locList");
+  ul.innerHTML = "";
+  if(!filtered.length) document.getElementById('noResults').style.display='block';
+  else document.getElementById('noResults').style.display='none';
+  filtered.forEach((loc, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="loc-title">${loc.name}</span><br><span class="loc-addr">${loc.address}</span>`;
+    li.onclick = ()=>{ markers[loc.idx||i].openPopup(); map.setView([loc.lat, loc.lng], 14); };
+    ul.appendChild(li);
+  });
+}
+renderList();
+
+function toggleSidebar() {
+  const sb = document.getElementById("sidebar");
+  sb.classList.toggle("collapsed");
+  // Change icon: › (right chevron) when collapsed, ‹ (left chevron) when open
+  const btn = document.getElementById("expandBtn");
+  btn.innerHTML = sb.classList.contains("collapsed") ? '&#62;' : '&#60;';
+  setTimeout(()=>map.invalidateSize(),350);
+}
+document.getElementById("expandBtn").onclick = toggleSidebar;
+
+const input = document.getElementById('addressSearch');
+const sugDiv = document.getElementById('suggestions');
+input.addEventListener('input', async function() {
+  document.getElementById('clearBtn').style.display = input.value ? 'flex':'none';
+  if(!input.value.trim()) { sugDiv.style.display="none"; renderList(); fitAll(); return; }
+  // Photon API - no country restriction!
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(input.value)}&lang=en&limit=6`;
+  const res = await fetch(url); const data = await res.json();
+  sugDiv.innerHTML = "";
+  data.features.forEach(f => {
+    const d = document.createElement('div');
+    d.className = "suggestion-item";
+    d.textContent = [f.properties.name, f.properties.city, f.properties.state, f.properties.country].filter(Boolean).join(', ');
+    d.onclick = () => {
+      input.value = d.textContent; sugDiv.style.display="none";
+      document.getElementById('clearBtn').style.display='flex';
+      focusNearby(f.geometry.coordinates[1], f.geometry.coordinates[0]);
     };
-
-    // Auto-focus search bar
-    window.addEventListener('load', () => {
-      const searchInput = document.getElementById('addressSearch');
-      if (searchInput) searchInput.focus();
+    sugDiv.appendChild(d);
+  });
+  sugDiv.style.display = data.features.length ? "block" : "none";
+});
+document.addEventListener('click', e=>{
+  if(e.target!==input && e.target.parentNode!==sugDiv) sugDiv.style.display="none";
+});
+function clearSearch() {
+  input.value = ""; sugDiv.style.display="none";
+  document.getElementById('clearBtn').style.display='none';
+  renderList(); fitAll();
+}
+function fitAll() {
+  const g = new L.featureGroup(markers); map.fitBounds(g.getBounds().pad(0.12));
+}
+function focusNearby(lat, lng, radius_km=70) {
+  const filtered = locations.filter(loc => {
+    const d = Math.sqrt(Math.pow(loc.lat-lat,2)+Math.pow((loc.lng-lng)*Math.cos(lat*Math.PI/180),2));
+    return d < (radius_km/111);
+  });
+  if(filtered.length) {
+    renderList(filtered);
+    const ms = filtered.map(l=>L.marker([l.lat,l.lng]));
+    const g = new L.featureGroup(ms);
+    map.fitBounds(g.getBounds().pad(0.22));
+    let minIdx = 0, minDist = 1e10;
+    filtered.forEach((loc,i)=>{
+      const d = Math.sqrt(Math.pow(loc.lat-lat,2)+Math.pow((loc.lng-lng)*Math.cos(lat*Math.PI/180),2));
+      if(d<minDist) {minDist=d; minIdx=i;}
     });
-
-    // Clear search
-    window.clearSearch = function() {
-      const input = document.getElementById('addressSearch');
-      input.value = '';
-      const sugDiv = document.getElementById('suggestions');
-      sugDiv.style.display = 'none';
-      document.getElementById('clearButton').style.display = 'none';
-
-      // Remove old cluster
-      map.removeLayer(currentCluster);
-
-      // Create new cluster with all markers
-      currentCluster = L.markerClusterGroup();
-      currentCluster.addLayers(markers);
-      map.addLayer(currentCluster);
-
-      // Reset sidebar
-      renderList(locations);
-
-      // Reset map view
-      map.setView([54.0, -113.5], 6);
-    };
-
-    // Perform search
-    window.performSearch = async function() {
-      const val = document.getElementById('addressSearch').value.trim();
-      if (!val) return;
-
-      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&lang=en&limit=6&country=CA`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.features.length > 0) {
-        const lat = data.features[0].geometry.coordinates[1];
-        const lng = data.features[0].geometry.coordinates[0];
-        showNearby(lat, lng);
-        map.setView([lat, lng], 10);
-      }
-    };
-
-    // Photon address search
-    const input = document.getElementById('addressSearch');
-    const sugDiv = document.getElementById('suggestions');
-
-    input.addEventListener('input', async function() {
-      const val = this.value.trim();
-      if (!val) {
-        sugDiv.style.display = "none";
-        document.getElementById('clearButton').style.display = 'none';
-        return;
-      }
-
-      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&lang=en&limit=6&country=CA`;
-      const res = await fetch(url);
-      const data = await res.json();
-      sugDiv.innerHTML = "";
-
-      data.features.forEach(f => {
-        const div = document.createElement("div");
-        div.className = "suggestion-item";
-        div.textContent = `${f.properties.name || ''} ${f.properties.city || ''} ${f.properties.state || ''} ${f.properties.country || ''}`;
-        div.onclick = () => {
-          input.value = div.textContent;
-          sugDiv.style.display = "none";
-          const lat = f.geometry.coordinates[1];
-          const lng = f.geometry.coordinates[0];
-          showNearby(lat, lng);
-          map.setView([lat, lng], 10);
-        };
-        sugDiv.appendChild(div);
-      });
-
-      sugDiv.style.display = data.features.length ? "block" : "none";
-      document.getElementById('clearButton').style.display = val ? 'block' : 'none';
-    });
-
-    // Hide suggestions on outside click
-    document.addEventListener('click', (e) => {
-      if (e.target !== input && !sugDiv.contains(e.target)) {
-        sugDiv.style.display = "none";
-      }
-    });
-
-    // Show nearby UFA locations
-    function showNearby(lat, lng) {
-      const nearbyLocs = locations.filter(loc => getDistance(lat, lng, loc.lat, loc.lng) < 80);
-      const nearbyMarkers = nearbyLocs.map(loc => markers[locations.indexOf(loc)]);
-
-      // Remove old cluster
-      map.removeLayer(currentCluster);
-
-      // Create new cluster with filtered markers
-      currentCluster = L.markerClusterGroup();
-      currentCluster.addLayers(nearbyMarkers);
-      map.addLayer(currentCluster);
-
-      // Update sidebar
-      renderList(nearbyLocs);
-
-      // Fit map to bounds
-      if (nearbyMarkers.length > 0) {
-        const bounds = L.latLngBounds(nearbyMarkers.map(m => m.getLatLng()));
-        map.fitBounds(bounds.pad(0.2));
-      }
-    }
-
-    // Haversine distance calculation (km)
-    function getDistance(lat1, lng1, lat2, lng2) {
-      function toRad(x) { return x * Math.PI / 180; }
-      const R = 6371;
-      const dLat = toRad(lat2 - lat1);
-      const dLng = toRad(lng2 - lng1);
-      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
-      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    // Handle Enter key press
-    input.addEventListener('keydown', function(event) {
-      if (event.key === 'Enter') {
-        performSearch();
-      }
-    });
-  </script>
-</body>
-</html>
+    if(filtered[minIdx]) markers[filtered[minIdx].idx||minIdx].openPopup();
+  } else {
+    renderList([]);
+    document.getElementById('noResults').textContent="No nearby locations found.";
+  }
+}
+function highlightLoc(i){
+  document.getElementById("sidebar").classList.remove("collapsed");
+  document.getElementById("expandBtn").innerHTML = '&#60;';
+}
+</script>
