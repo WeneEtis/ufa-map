@@ -4,15 +4,11 @@
   <meta charset="UTF-8">
   <title>UFA Locations Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  
-  
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
-  
-  
+
   <style>
     body, html { margin: 0; padding: 0; height: 100%; }
     #container {
@@ -67,14 +63,27 @@
       background: #f5f5f5;
       transition: width 0.3s;
     }
-    #addressSearch {
+    #searchContainer {
+      display: flex;
+      align-items: center;
       width: 95%;
+      margin-bottom: 18px;
+    }
+    #addressSearch {
+      flex: 1;
       font-size: 18px;
       padding: 12px 40px 12px 14px;
       border: 2px solid #d8232a;
-      border-radius: 8px;
+      border-radius: 8px 0 0 8px;
       outline: none;
-      margin-bottom: 18px;
+    }
+    #searchButton {
+      background: #d8232a;
+      color: #fff;
+      border: none;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 14px;
+      cursor: pointer;
     }
     #resetButton {
       width: 95%;
@@ -140,20 +149,19 @@
   <div id="container">
     <div id="sidebar">
       <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">&lt;</button>
-      <input id="addressSearch" placeholder="Search for an address in Canada..." autocomplete="off">
+      <div id="searchContainer">
+        <input id="addressSearch" placeholder="Search for an address in Canada..." autocomplete="off">
+        <button id="searchButton" onclick="performSearch()"><img src="https://img.icons8.com/ios-glyphs/30/000000/search--v1.png" alt="Search"></button>
+      </div>
       <div id="suggestions" class="suggestions" style="display: none;"></div>
-      <button id="resetButton">Reset</button>
+      <button id="resetButton" onclick="resetMap()">Reset</button>
       <ul id="locationList" class="location-list"></ul>
     </div>
     <div id="map"></div>
   </div>
 
-  
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-
   <script>
     // Red marker icon
     const redIcon = L.icon({
@@ -176,167 +184,167 @@
     }).addTo(map);
 
     // UFA locations array
-    const locations = [
-    { name: "UFA Farm & Ranch Supply Store", address: "200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
-    { name: "UFA Farm & Ranch Supply Store", address: "3922 53 Street, Athabasca, AB, T9S 1B3", lat: 54.705852, lng: -113.2963253 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "2717 48 Avenue, Athabasca, AB, T9S 0A2", lat: 54.718363, lng: -113.295052 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "6102 48 Street, Barrhead, AB, T7N 1A4", lat: 54.1312291, lng: -114.3991238 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4510 50 Street, Bashaw, AB, T0B 0H0", lat: 52.580285, lng: -112.976363 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "203 Railway Avenue, Bawlf, AB, T0B 0J0", lat: 52.917801290087326, lng: -112.4675472 },
-    { name: "UFA Petroleum Cardlock", address: "Highway 49, Bay Tree, AB, T0H 0A0", lat: 55.826516, lng: -119.901744 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "102 3 Street W, Beaverlodge, AB, T0H 0C0", lat: 55.200337, lng: -119.434493 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "504 7 Street, Beiseker, AB, T0M 0G0", lat: 51.380595, lng: -113.5311714 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "404 7 Avenue W, Bow Island, AB, T0K 0G0", lat: 49.86734609697563, lng: -111.3819178 },
-    { name: "UFA Farm & Ranch Supply Store", address: "34-145051 Township Road 192 S, Brooks, AB, T1R 1C7", lat: 50.566689, lng: -111.916472 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "205-191056 Highway 873, Brooks, AB, T1R 1C6", lat: 50.57912839389027, lng: -111.8971637 },
-    { name: "UFA Petroleum Cardlock", address: "702 Lakeshore Drive, Buck Lake, AB, T0C 0T0", lat: 52.94572272614069, lng: -114.7635162 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "Highway 16 & 47, Edson, AB, T7E 1V4", lat: 53.5858662, lng: -116.442847 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "619 Moraine Road NE, Calgary, AB, T2A 2P4", lat: 51.057184, lng: -113.998826 },
-    { name: "UFA Support Office", address: "700-4838 Richard Road SW, Calgary, AB, T3E 6L1", lat: 51.01143959001018, lng: -114.1244607 },
-    { name: "UFA Farm & Ranch Supply Store", address: "4904 39 Street, Camrose, AB, T4V 2N7", lat: 53.01943233147715, lng: -112.8064378 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4719 37 Street, Camrose, AB, T4V 0S9", lat: 53.014344, lng: -112.797102 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "1058 1 Avenue W, Cardston, AB, T0K 0K0", lat: 49.2018654, lng: -113.327092 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "123 9 Avenue, Carstairs, AB, T0M 0N0", lat: 51.5673578, lng: -114.0987972 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5210 50 Avenue, Castor, AB, T0C 0X0", lat: 52.2175762, lng: -111.9031332 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "611 5 Avenue W, Cereal, AB, T0J 0N0", lat: 51.418546, lng: -110.800204 },
-    { name: "UFA Farm & Ranch Supply Store", address: "4425 5 Street E, Claresholm, AB, T0L 0T0", lat: 50.021358, lng: -113.572856 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4424 2 Street E, Claresholm, AB, T0L 0T0", lat: 50.0208413, lng: -113.576702 },
-    { name: "UFA Farm & Ranch Supply Store", address: "4618 48A Avenue, Consort, AB, T0C 1B0", lat: 52.006745, lng: -110.769476 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5411 48 Avenue, Consort, AB, T0C 1B0", lat: 52.005954, lng: -110.773631 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "2 Henry Gate, Corman Park, SK, S7K 3J7", lat: 52.2261639, lng: -106.5931267 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4430 Victoria Avenue, Coronation, AB, T0C 1C0", lat: 52.089671, lng: -111.4389925 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4936 46 Street, Czar, AB, T0B 0Z0", lat: 52.4561746, lng: -110.820648 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "401 Highway 2, Dawson Creek, BC, V1G 4H7", lat: 55.75769675, lng: -120.2246128 },
-    { name: "UFA Petroleum Cardlock", address: "101 1 Street W, Delia, AB, T0J 0W0", lat: 51.630268, lng: -112.375208 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "115 2 Street E, Dewberry, AB, T0B 1G0", lat: 53.588363, lng: -110.522384 },
-    { name: "UFA Farm & Ranch Supply Store", address: "3214 63 Street, Drayton Valley, AB, T7A 1S4", lat: 53.20557494999443, lng: -115.0032024 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "3225 63 Street SE, Drayton Valley, AB, T7A 1R3", lat: 53.205575, lng: -115.003202 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "701 Elgin Close, Drumheller, AB, T0J 0Y1", lat: 51.46168385, lng: -112.7194321 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "206 3 Avenue E, Dunmore, AB, T1B 0J9", lat: 49.9703979, lng: -110.5768293 },
-    { name: "UFA Fertilizer Plant", address: "Secondary Highway 739, Eaglesham, AB, T0H 1H0", lat: 55.7822811, lng: -117.8823326 },
-    { name: "UFA Petroleum Cardlock", address: "4804 54 Avenue, Eckville, AB, T0M 0X0", lat: 52.363133, lng: -114.361735 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5015 53 Street, Edgerton, AB, T0B 1K0", lat: 52.760788, lng: -110.463195 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5823 125 Avenue NW, Edmonton, AB, T5W 5G4", lat: 53.581364429249554, lng: -113.4312948 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "16707 121 Avenue NW, Edmonton, AB, T5B 4J6", lat: 53.57265270441447, lng: -113.6092618 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "Highway 16 & 47, Edson, AB, T7E 1V4", lat: 53.5858662, lng: -116.442847 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4525 Railway Avenue, Elk Point, AB, T0A 1A0", lat: 53.89616603032539, lng: -110.8932377 },
-    { name: "UFA Farm & Ranch Supply Store", address: "11804 101 Avenue, Fairview, AB, T0H 1L0", lat: 56.0657912, lng: -118.4011783 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "9209 113 Street, Fairview, AB, T0H 1L0", lat: 56.058560652941175, lng: -118.3917179 },
-    { name: "UFA Farm & Ranch Supply Store", address: "922 Main Street SE, Falher, AB, T0H 1M0", lat: 55.7346878, lng: -117.201276 },
-    { name: "UFA Petroleum Cardlock", address: "921 Main Street SW, Falher, AB, T0H 1M0", lat: 55.732494, lng: -117.202032 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4402 47 Street, Forestburg, AB, T0B 1N0", lat: 52.58203864388361, lng: -112.0588849 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "865 14 Street, Fort Macleod, AB, T0L 0Z0", lat: 49.71780965, lng: -113.3904833 },
-    { name: "UFA Farm & Ranch Supply Store", address: "11111 86 Avenue, Fort Saskatchewan, AB, T8L 3W6", lat: 53.7059015, lng: -113.1903733 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "8594 112 Street, Fort Saskatchewan, AB, T8L 3V8", lat: 53.705267, lng: -113.188643 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "7408 Alaska Road N, Fort St. John, BC, V1J 6Y4", lat: 56.222139, lng: -120.800873 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "102 1 Avenue, Fox Creek, AB, T0H 1P0", lat: 54.39393465, lng: -116.8002985 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5011 Railway Avenue, Glendon, AB, T0A 1P0", lat: 54.251076, lng: -111.156714 },
-    { name: "UFA Petroleum Cardlock", address: "Highway 40 S, Grande Cache, AB, T0E 0Y0", lat: 53.89451287380662, lng: -119.1372981 },
-    { name: "UFA Farm & Ranch Supply Store", address: "15602 101 Street, Grande Prairie, AB, T8V 0P2", lat: 55.19801206555199, lng: -118.7980107 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "13705 100 Street, Grande Prairie, AB, T8V 4H4", lat: 55.2050581, lng: -118.7935056 },
-    { name: "UFA Petroleum Cardlock", address: "15602 101 Street, Grande Prairie, AB, T8V 0P2", lat: 55.19801206555199, lng: -118.7980107 },
-    { name: "UFA Petroleum Cardlock", address: "9702 115 Street, Grande Prairie, AB, T8V 4J5", lat: 55.1672801, lng: -118.8424851 },
-    { name: "UFA Farm & Ranch Supply Store", address: "5303 57 Avenue, Grimshaw, AB, T0H 1W0", lat: 56.193631, lng: -117.615208 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5901 51 Street, Grimshaw, AB, T0H 1W0", lat: 56.1971075, lng: -117.6118531 },
-    { name: "UFA Farm & Ranch Supply Store", address: "601 1 Avenue W, Hanna, AB, T0J 1P0", lat: 51.639955, lng: -111.938297 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "605 1 Avenue W, Hanna, AB, T0J 1P0", lat: 51.640978, lng: -111.933587 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "11400 95 Street, High Level, AB, T0H 1Z0", lat: 58.505718, lng: -117.138062 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4136 53 Avenue, High Prairie, AB, T0G 1E0", lat: 55.43287762441355, lng: -116.5046471 },
-    { name: "UFA Farm & Ranch Supply Store", address: "2006 10 Avenue SE, High River, AB, T1V 1M7", lat: 50.57397063, lng: -113.8539692 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "2002 10 Avenue SE, High River, AB, T1V 1M7", lat: 50.57397063, lng: -113.8539692 },
-    { name: "UFA Petroleum Cardlock", address: "1044 1 Avenue, Hines Creek, AB, T0H 1L0", lat: 56.247517, lng: -118.606632 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "301 Fleming Drive, Hinton, AB, T7V 0B1", lat: 53.414985, lng: -117.543082 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5015 40 Avenue, Innisfail, AB, T4G 1Z1", lat: 52.029184, lng: -113.930408 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "NE Corner Highway 36 & 13, Killam, AB, T0B 2L0", lat: 52.7877367, lng: -111.8569101 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "1415 11 Avenue W, Kindersley, SK, S0L 1S0", lat: 51.47384475, lng: -109.1907039 },
-    { name: "UFA Farm & Ranch Supply Store", address: "9801 100 Street, La Crete, AB, T0H 2H0", lat: 58.1842696, lng: -116.404296 },
-    { name: "UFA Fertilizer Plant", address: "10305 100 Street, La Crete, AB, T0H 2H0", lat: 58.18991638, lng: -116.4042854 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "10301 100 Street, La Crete, AB, T0H 2H0", lat: 58.1898627, lng: -116.4042857 },
-    { name: "UFA Petroleum Cardlock", address: "10101 100 Avenue, La Glace, AB, T0H 2J0", lat: 55.40297895, lng: -119.1584737 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "8304 100 Street, Lac La Biche, AB, T0A 2C0", lat: 54.7578111, lng: -111.9727686 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4537 50 Avenue, Lacombe, AB, T4L 2B5", lat: 52.463019, lng: -113.724528 },
-    { name: "UFA Farm & Ranch Supply Store", address: "6505 45 Street, Leduc, AB, T9E 7E1", lat: 53.2798842, lng: -113.5407584 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "6509 45 Street, Leduc, AB, T9E 7E1", lat: 53.281401, lng: -113.54112 },
-    { name: "UFA Farm & Ranch Supply Store", address: "2905 2 Avenue N, Lethbridge, AB, T1H 6M1", lat: 49.7007286, lng: -112.798853 },
-    { name: "UFA Fertilizer Plant", address: "Highway 4 & 845, Lethbridge, AB, T1J 4P4", lat: 49.71034893333333, lng: -112.7172642 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "3125 2 Avenue N, Lethbridge, AB, T1H 0C5", lat: 49.700895, lng: -112.794683 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5601 63 Avenue, Lloydminster, AB, T9V 3T7", lat: 53.295653, lng: -110.036557 },
-    { name: "UFA Petroleum Cardlock", address: "305 2 Avenue N, Lomond, AB, T0L 2B0", lat: 50.350965, lng: -112.64038 },
-    { name: "UFA Petroleum Cardlock", address: "5510 46 Street, Macklin, SK, S0L 2C0", lat: 52.33174562634594, lng: -109.9360705 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "HWY 35, Manning, AB, T0H 2M0", lat: 56.93400758840293, lng: -117.6247795 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5007 47 Street, Mannville, AB, T0B 2W0", lat: 53.33696775, lng: -111.1746836 },
-    { name: "UFA Farm & Ranch Supply Store", address: "4606 42 Avenue, Mayerthorpe, AB, T0E 1N0", lat: 53.94220900948253, lng: -115.1283559 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4913 42 Avenue, Mayerthorpe, AB, T0E 1N0", lat: 53.9473995, lng: -115.1380366 },
-    { name: "UFA Farm & Ranch Supply Store", address: "1467 30 Street SW, Medicine Hat, AB, T1B 3N4", lat: 50.010902, lng: -110.720465 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "1725 Hodgins Drive, Melfort, SK, S0E 1A0", lat: 52.84745169967201, lng: -104.599142 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "704 Service Road NW, Milk River, AB, T0K 1M0", lat: 49.154042, lng: -112.090749 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "9901 87 Avenue, Morinville, AB, T8R 1K6", lat: 53.7830772, lng: -113.6438746 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "1705 20 Avenue, Nanton, AB, T0L 1R0", lat: 50.350992, lng: -113.774157 },
-    { name: "UFA Petroleum Cardlock", address: "102 Highway Avenue, Nobleford, AB, T0L 1S0", lat: 49.87443455, lng: -113.0534739 },
-    { name: "UFA Farm & Ranch Supply Store", address: "4334 46 Avenue, Olds, AB, T4H 1A2", lat: 51.79918975, lng: -114.097111 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4514 Imperial Road, Olds, AB, T4H 1M6", lat: 51.795975, lng: -114.130363 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5340 Lac St. Anne Trail S, Onoway, AB, T0E 1V0", lat: 53.70250945, lng: -114.2019053 },
-    { name: "UFA Farm & Ranch Supply Store", address: "132 4 Street E, Oyen, AB, T0J 2J0", lat: 51.3546094, lng: -110.4746265 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "104 4 Street E, Oyen, AB, T0J 2J0", lat: 51.35384844924242, lng: -110.47438 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "9801 74 Street, Peace River, AB, T0H 1W0", lat: 56.18725562155556, lng: -117.614491 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "119 Highway Avenue N, Picture Butte, AB, T0K 1V0", lat: 49.87957110000001, lng: -112.7755772 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "1050 Corner Mountain Street, Pincher Creek, AB, T0K 1W0", lat: 49.501876, lng: -113.944675 },
-    { name: "UFA Farm & Ranch Supply Store", address: "3604 67 Street, Ponoka, AB, T4J 1J8", lat: 52.666467, lng: -113.606856 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "6520 46 Avenue, Ponoka, AB, T4J 1J8", lat: 52.674507, lng: -113.603416 },
-    { name: "UFA Farm & Ranch Supply Store", address: "4312 50 Avenue, Provost, AB, T0B 3S0", lat: 52.351723, lng: -110.255403 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "3803 56 Avenue, Provost, AB, T0B 3S0", lat: 52.35976016, lng: -110.2574083 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "3175 Commercial Drive, RM Of Moose Jaw, SK, S6H 4P5", lat: 50.4272786, lng: -105.562481 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "8121 Edgar Industrial Drive, Red Deer, AB, T4P 3R2", lat: 52.3151925, lng: -113.8390865 },
-    { name: "UFA Farm & Ranch Supply Store", address: "416 Lantern Street, Red Deer County, AB, T4E 0A5", lat: 52.2104183, lng: -113.8239546 },
-    { name: "UFA Petroleum Cardlock", address: "37479 Highway 2, Red Deer County, AB, T4E 1B1", lat: 52.222038, lng: -113.811513 },
-    { name: "UFA Petroleum Cardlock", address: "204 Burnt Ridge Road, Red Deer County, AB, T4S 2L4", lat: 52.2900344, lng: -113.8717235 },
-    { name: "UFA Petroleum Cardlock", address: "416 Lantern Street, Red Deer County, AB, T4E 0A5", lat: 52.2104183, lng: -113.8239546 },
-    { name: "UFA Petroleum Cardlock", address: "1632 Dirkson Drive NE, Redcliff, AB, T0J 2P0", lat: 50.0821131, lng: -110.7641038 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5602 43 Street, Rimbey, AB, T0C 2J0", lat: 52.64559170833459, lng: -114.2228037 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4326 52 Avenue, Rocky Mountain House, AB, T0M 1T0", lat: 52.377609232792345, lng: -114.924334 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4910 42 Street, Rycroft, AB, T0H 3A0", lat: 55.75720265, lng: -118.6997524 },
-    { name: "UFA Fertilizer Plant", address: "23-732010 Range Road 62, Sexsmith, AB, T0H 3C0", lat: 55.357856, lng: -118.792986 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5503 44 Avenue, Smoky Lake, AB, T0A 3C0", lat: 54.1096342, lng: -112.4835558 },
-    { name: "UFA Petroleum Cardlock", address: "5002 50 Street, Spirit River, AB, T0H 3G0", lat: 55.781138892592594, lng: -118.8389465 },
-    { name: "UFA Farm & Ranch Supply Store", address: "200 Diamond Avenue, Spruce Grove, AB, T7X 3A8", lat: 53.5357419, lng: -113.9096663 },
-    { name: "UFA Petroleum Cardlock", address: "200 Diamond Avenue, Spruce Grove, AB, T7X 3A8", lat: 53.5357419, lng: -113.9096663 },
-    { name: "UFA Farm & Ranch Supply Store", address: "3938 50 Avenue, St. Paul, AB, T0A 3A0", lat: 53.991365, lng: -111.294848 },
-    { name: "UFA Petroleum Cardlock", address: "3938 50 Avenue, St. Paul, AB, T0A 3A0", lat: 53.991365, lng: -111.294848 },
-    { name: "UFA Farm & Ranch Supply Store", address: "7007 50 Avenue NW, Stettler, AB, T0C 2L1", lat: 52.3235921, lng: -112.7406237 },
-    { name: "UFA Fertilizer Plant", address: "5107 46 Street, Stettler, AB, T0C 2L0", lat: 52.321609, lng: -112.6990224 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "7007A 50 Avenue, Stettler, AB, T0C 2L0", lat: 52.32398, lng: -112.7425935 },
-    { name: "UFA Farm & Ranch Supply Store", address: "58 Slater Road, Strathmore, AB, T1P 1J3", lat: 51.03113505, lng: -113.3873141 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "59 Spruce Park Drive, Strathmore, AB, T1P 1J2", lat: 51.031734, lng: -113.387673 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "1810 South Service Road, Swift Current, SK, S9H 3T3", lat: 50.286652, lng: -107.824797 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "18 Industrial Drive, Sylvan Lake, AB, T4S 1P4", lat: 52.3152, lng: -114.069728 },
-    { name: "UFA Farm & Ranch Supply Store", address: "5813 60 Avenue, Taber, AB, T1G 2C2", lat: 49.796452, lng: -112.134283 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5807 60 Avenue, Taber, AB, T1G 2E1", lat: 49.79638592164492, lng: -112.1455478 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "1631 2 Street N, Three Hills, AB, T0M 2A0", lat: 51.7066502, lng: -113.2470998 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5108 51 Avenue, Tofield, AB, T0B 4J0", lat: 53.367464, lng: -112.664367 },
-    { name: "UFA Farm & Ranch Supply Store", address: "101 1 Avenue N, Trochu, AB, T0M 2C0", lat: 51.823068, lng: -113.237241 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "100 1 Avenue N, Trochu, AB, T0M 2C0", lat: 51.82371676448556, lng: -113.2383179 },
-    { name: "UFA Farm & Ranch Supply Store", address: "5101 53 Avenue, Two Hills, AB, T0B 4K0", lat: 53.71333768870123, lng: -111.7382502 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4801 55 Avenue, Two Hills, AB, T0B 4K0", lat: 53.71620335, lng: -111.7381258 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4513 E Highway Street, Valleyview, AB, T0H 3N0", lat: 55.0654406, lng: -117.2774164 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4725 50 Avenue, Vegreville, AB, T9C 1L1", lat: 53.490993, lng: -112.043786 },
-    { name: "UFA Farm & Ranch Supply Store", address: "4908 47 Avenue, Vermilion, AB, T9X 1J6", lat: 53.349949, lng: -110.851326 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "4910 47 Avenue, Vermilion, AB, T9X 1J6", lat: 53.3503092, lng: -110.850968 },
-    { name: "UFA Farm & Ranch Supply Store", address: "919 2 Avenue N, Vulcan, AB, T0L 2B0", lat: 50.408587, lng: -113.270434 },
-    { name: "UFA Fertilizer Plant", address: "410 1 Avenue N, Vulcan, AB, T0L 2B0", lat: 50.407434, lng: -113.264394 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "110 Service Road, Vulcan, AB, T0L 2B0", lat: 50.40544785, lng: -113.2572109 },
-    { name: "UFA Petroleum Cardlock", address: "1100 Highway 813, Wabasca, AB, T0G 2K0", lat: 55.9578311, lng: -113.8128486 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "2202 17 Avenue, Wainwright, AB, T9W 1L2", lat: 52.8468931, lng: -110.8393163 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5008 53 Street, Warburg, AB, T0C 2T0", lat: 53.1793433, lng: -114.3224247 },
-    { name: "UFA Farm & Ranch Supply Store", address: "10820 100 Street, Westlock, AB, T7P 2C3", lat: 54.152266, lng: -113.837625 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "9616 107 Street, Westlock, AB, T7P 1R4", lat: 54.152531, lng: -113.871411 },
-    { name: "UFA Petroleum Cardlock", address: "4805 40 Avenue, Wetaskiwin, AB, T9A 3E9", lat: 52.9596407, lng: -113.373922 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "2 Cossette Lane, Weyburn, SK, S4H 0W4", lat: 49.6691121, lng: -103.8944682 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "5400 Caxton Street W, Whitecourt, AB, T7S 0A5", lat: 54.142887, lng: -115.712854 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "53417 Range Road 92, Wildwood, AB, T0E 2M0", lat: 53.62214445548833, lng: -115.2301135 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "476 Secondary Highway 726, Worsley, AB, T0H 3W0", lat: 56.5076803, lng: -119.1331451 },
-    { name: "UFA Petroleum Agency & Cardlock", address: "309 Fitchner Road, Yorkton, SK, S3N 2W7", lat: 51.2239086, lng: -102.4907083 }
-];
+    [
+        { name: "UFA Farm & Ranch Supply Store", address: "200-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "100-937 Highland Park Blvd NE, Airdrie, AB, T4A 0R2", lat: 51.3042704, lng: -113.9966834 },
+        { name: "UFA Farm & Ranch Supply Store", address: "3922 53 Street, Athabasca, AB, T9S 1B3", lat: 54.705852, lng: -113.2963253 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "2717 48 Avenue, Athabasca, AB, T9S 0A2", lat: 54.718363, lng: -113.295052 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "6102 48 Street, Barrhead, AB, T7N 1A4", lat: 54.1312291, lng: -114.3991238 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4510 50 Street, Bashaw, AB, T0B 0H0", lat: 52.580285, lng: -112.976363 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "203 Railway Avenue, Bawlf, AB, T0B 0J0", lat: 52.917801290087326, lng: -112.4675472 },
+        { name: "UFA Petroleum Cardlock", address: "Highway 49, Bay Tree, AB, T0H 0A0", lat: 55.826516, lng: -119.901744 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "102 3 Street W, Beaverlodge, AB, T0H 0C0", lat: 55.200337, lng: -119.434493 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "504 7 Street, Beiseker, AB, T0M 0G0", lat: 51.380595, lng: -113.5311714 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "404 7 Avenue W, Bow Island, AB, T0K 0G0", lat: 49.86734609697563, lng: -111.3819178 },
+        { name: "UFA Farm & Ranch Supply Store", address: "34-145051 Township Road 192 S, Brooks, AB, T1R 1C7", lat: 50.566689, lng: -111.916472 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "205-191056 Highway 873, Brooks, AB, T1R 1C6", lat: 50.57912839389027, lng: -111.8971637 },
+        { name: "UFA Petroleum Cardlock", address: "702 Lakeshore Drive, Buck Lake, AB, T0C 0T0", lat: 52.94572272614069, lng: -114.7635162 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "Highway 16 & 47, Edson, AB, T7E 1V4", lat: 53.5858662, lng: -116.442847 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "619 Moraine Road NE, Calgary, AB, T2A 2P4", lat: 51.057184, lng: -113.998826 },
+        { name: "UFA Support Office", address: "700-4838 Richard Road SW, Calgary, AB, T3E 6L1", lat: 51.01143959001018, lng: -114.1244607 },
+        { name: "UFA Farm & Ranch Supply Store", address: "4904 39 Street, Camrose, AB, T4V 2N7", lat: 53.01943233147715, lng: -112.8064378 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4719 37 Street, Camrose, AB, T4V 0S9", lat: 53.014344, lng: -112.797102 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "1058 1 Avenue W, Cardston, AB, T0K 0K0", lat: 49.2018654, lng: -113.327092 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "123 9 Avenue, Carstairs, AB, T0M 0N0", lat: 51.5673578, lng: -114.0987972 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5210 50 Avenue, Castor, AB, T0C 0X0", lat: 52.2175762, lng: -111.9031332 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "611 5 Avenue W, Cereal, AB, T0J 0N0", lat: 51.418546, lng: -110.800204 },
+        { name: "UFA Farm & Ranch Supply Store", address: "4425 5 Street E, Claresholm, AB, T0L 0T0", lat: 50.021358, lng: -113.572856 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4424 2 Street E, Claresholm, AB, T0L 0T0", lat: 50.0208413, lng: -113.576702 },
+        { name: "UFA Farm & Ranch Supply Store", address: "4618 48A Avenue, Consort, AB, T0C 1B0", lat: 52.006745, lng: -110.769476 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5411 48 Avenue, Consort, AB, T0C 1B0", lat: 52.005954, lng: -110.773631 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "2 Henry Gate, Corman Park, SK, S7K 3J7", lat: 52.2261639, lng: -106.5931267 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4430 Victoria Avenue, Coronation, AB, T0C 1C0", lat: 52.089671, lng: -111.4389925 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4936 46 Street, Czar, AB, T0B 0Z0", lat: 52.4561746, lng: -110.820648 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "401 Highway 2, Dawson Creek, BC, V1G 4H7", lat: 55.75769675, lng: -120.2246128 },
+        { name: "UFA Petroleum Cardlock", address: "101 1 Street W, Delia, AB, T0J 0W0", lat: 51.630268, lng: -112.375208 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "115 2 Street E, Dewberry, AB, T0B 1G0", lat: 53.588363, lng: -110.522384 },
+        { name: "UFA Farm & Ranch Supply Store", address: "3214 63 Street, Drayton Valley, AB, T7A 1S4", lat: 53.20557494999443, lng: -115.0032024 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "3225 63 Street SE, Drayton Valley, AB, T7A 1R3", lat: 53.205575, lng: -115.003202 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "701 Elgin Close, Drumheller, AB, T0J 0Y1", lat: 51.46168385, lng: -112.7194321 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "206 3 Avenue E, Dunmore, AB, T1B 0J9", lat: 49.9703979, lng: -110.5768293 },
+        { name: "UFA Fertilizer Plant", address: "Secondary Highway 739, Eaglesham, AB, T0H 1H0", lat: 55.7822811, lng: -117.8823326 },
+        { name: "UFA Petroleum Cardlock", address: "4804 54 Avenue, Eckville, AB, T0M 0X0", lat: 52.363133, lng: -114.361735 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5015 53 Street, Edgerton, AB, T0B 1K0", lat: 52.760788, lng: -110.463195 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5823 125 Avenue NW, Edmonton, AB, T5W 5G4", lat: 53.581364429249554, lng: -113.4312948 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "16707 121 Avenue NW, Edmonton, AB, T5B 4J6", lat: 53.57265270441447, lng: -113.6092618 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "Highway 16 & 47, Edson, AB, T7E 1V4", lat: 53.5858662, lng: -116.442847 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4525 Railway Avenue, Elk Point, AB, T0A 1A0", lat: 53.89616603032539, lng: -110.8932377 },
+        { name: "UFA Farm & Ranch Supply Store", address: "11804 101 Avenue, Fairview, AB, T0H 1L0", lat: 56.0657912, lng: -118.4011783 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "9209 113 Street, Fairview, AB, T0H 1L0", lat: 56.058560652941175, lng: -118.3917179 },
+        { name: "UFA Farm & Ranch Supply Store", address: "922 Main Street SE, Falher, AB, T0H 1M0", lat: 55.7346878, lng: -117.201276 },
+        { name: "UFA Petroleum Cardlock", address: "921 Main Street SW, Falher, AB, T0H 1M0", lat: 55.732494, lng: -117.202032 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4402 47 Street, Forestburg, AB, T0B 1N0", lat: 52.58203864388361, lng: -112.0588849 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "865 14 Street, Fort Macleod, AB, T0L 0Z0", lat: 49.71780965, lng: -113.3904833 },
+        { name: "UFA Farm & Ranch Supply Store", address: "11111 86 Avenue, Fort Saskatchewan, AB, T8L 3W6", lat: 53.7059015, lng: -113.1903733 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "8594 112 Street, Fort Saskatchewan, AB, T8L 3V8", lat: 53.705267, lng: -113.188643 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "7408 Alaska Road N, Fort St. John, BC, V1J 6Y4", lat: 56.222139, lng: -120.800873 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "102 1 Avenue, Fox Creek, AB, T0H 1P0", lat: 54.39393465, lng: -116.8002985 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5011 Railway Avenue, Glendon, AB, T0A 1P0", lat: 54.251076, lng: -111.156714 },
+        { name: "UFA Petroleum Cardlock", address: "Highway 40 S, Grande Cache, AB, T0E 0Y0", lat: 53.89451287380662, lng: -119.1372981 },
+        { name: "UFA Farm & Ranch Supply Store", address: "15602 101 Street, Grande Prairie, AB, T8V 0P2", lat: 55.19801206555199, lng: -118.7980107 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "13705 100 Street, Grande Prairie, AB, T8V 4H4", lat: 55.2050581, lng: -118.7935056 },
+        { name: "UFA Petroleum Cardlock", address: "15602 101 Street, Grande Prairie, AB, T8V 0P2", lat: 55.19801206555199, lng: -118.7980107 },
+        { name: "UFA Petroleum Cardlock", address: "9702 115 Street, Grande Prairie, AB, T8V 4J5", lat: 55.1672801, lng: -118.8424851 },
+        { name: "UFA Farm & Ranch Supply Store", address: "5303 57 Avenue, Grimshaw, AB, T0H 1W0", lat: 56.193631, lng: -117.615208 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5901 51 Street, Grimshaw, AB, T0H 1W0", lat: 56.1971075, lng: -117.6118531 },
+        { name: "UFA Farm & Ranch Supply Store", address: "601 1 Avenue W, Hanna, AB, T0J 1P0", lat: 51.639955, lng: -111.938297 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "605 1 Avenue W, Hanna, AB, T0J 1P0", lat: 51.640978, lng: -111.933587 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "11400 95 Street, High Level, AB, T0H 1Z0", lat: 58.505718, lng: -117.138062 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4136 53 Avenue, High Prairie, AB, T0G 1E0", lat: 55.43287762441355, lng: -116.5046471 },
+        { name: "UFA Farm & Ranch Supply Store", address: "2006 10 Avenue SE, High River, AB, T1V 1M7", lat: 50.57397063, lng: -113.8539692 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "2002 10 Avenue SE, High River, AB, T1V 1M7", lat: 50.57397063, lng: -113.8539692 },
+        { name: "UFA Petroleum Cardlock", address: "1044 1 Avenue, Hines Creek, AB, T0H 1L0", lat: 56.247517, lng: -118.606632 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "301 Fleming Drive, Hinton, AB, T7V 0B1", lat: 53.414985, lng: -117.543082 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5015 40 Avenue, Innisfail, AB, T4G 1Z1", lat: 52.029184, lng: -113.930408 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "NE Corner Highway 36 & 13, Killam, AB, T0B 2L0", lat: 52.7877367, lng: -111.8569101 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "1415 11 Avenue W, Kindersley, SK, S0L 1S0", lat: 51.47384475, lng: -109.1907039 },
+        { name: "UFA Farm & Ranch Supply Store", address: "9801 100 Street, La Crete, AB, T0H 2H0", lat: 58.1842696, lng: -116.404296 },
+        { name: "UFA Fertilizer Plant", address: "10305 100 Street, La Crete, AB, T0H 2H0", lat: 58.18991638, lng: -116.4042854 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "10301 100 Street, La Crete, AB, T0H 2H0", lat: 58.1898627, lng: -116.4042857 },
+        { name: "UFA Petroleum Cardlock", address: "10101 100 Avenue, La Glace, AB, T0H 2J0", lat: 55.40297895, lng: -119.1584737 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "8304 100 Street, Lac La Biche, AB, T0A 2C0", lat: 54.7578111, lng: -111.9727686 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4537 50 Avenue, Lacombe, AB, T4L 2B5", lat: 52.463019, lng: -113.724528 },
+        { name: "UFA Farm & Ranch Supply Store", address: "6505 45 Street, Leduc, AB, T9E 7E1", lat: 53.2798842, lng: -113.5407584 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "6509 45 Street, Leduc, AB, T9E 7E1", lat: 53.281401, lng: -113.54112 },
+        { name: "UFA Farm & Ranch Supply Store", address: "2905 2 Avenue N, Lethbridge, AB, T1H 6M1", lat: 49.7007286, lng: -112.798853 },
+        { name: "UFA Fertilizer Plant", address: "Highway 4 & 845, Lethbridge, AB, T1J 4P4", lat: 49.71034893333333, lng: -112.7172642 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "3125 2 Avenue N, Lethbridge, AB, T1H 0C5", lat: 49.700895, lng: -112.794683 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5601 63 Avenue, Lloydminster, AB, T9V 3T7", lat: 53.295653, lng: -110.036557 },
+        { name: "UFA Petroleum Cardlock", address: "305 2 Avenue N, Lomond, AB, T0L 2B0", lat: 50.350965, lng: -112.64038 },
+        { name: "UFA Petroleum Cardlock", address: "5510 46 Street, Macklin, SK, S0L 2C0", lat: 52.33174562634594, lng: -109.9360705 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "HWY 35, Manning, AB, T0H 2M0", lat: 56.93400758840293, lng: -117.6247795 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5007 47 Street, Mannville, AB, T0B 2W0", lat: 53.33696775, lng: -111.1746836 },
+        { name: "UFA Farm & Ranch Supply Store", address: "4606 42 Avenue, Mayerthorpe, AB, T0E 1N0", lat: 53.94220900948253, lng: -115.1283559 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4913 42 Avenue, Mayerthorpe, AB, T0E 1N0", lat: 53.9473995, lng: -115.1380366 },
+        { name: "UFA Farm & Ranch Supply Store", address: "1467 30 Street SW, Medicine Hat, AB, T1B 3N4", lat: 50.010902, lng: -110.720465 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "1725 Hodgins Drive, Melfort, SK, S0E 1A0", lat: 52.84745169967201, lng: -104.599142 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "704 Service Road NW, Milk River, AB, T0K 1M0", lat: 49.154042, lng: -112.090749 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "9901 87 Avenue, Morinville, AB, T8R 1K6", lat: 53.7830772, lng: -113.6438746 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "1705 20 Avenue, Nanton, AB, T0L 1R0", lat: 50.350992, lng: -113.774157 },
+        { name: "UFA Petroleum Cardlock", address: "102 Highway Avenue, Nobleford, AB, T0L 1S0", lat: 49.87443455, lng: -113.0534739 },
+        { name: "UFA Farm & Ranch Supply Store", address: "4334 46 Avenue, Olds, AB, T4H 1A2", lat: 51.79918975, lng: -114.097111 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4514 Imperial Road, Olds, AB, T4H 1M6", lat: 51.795975, lng: -114.130363 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5340 Lac St. Anne Trail S, Onoway, AB, T0E 1V0", lat: 53.70250945, lng: -114.2019053 },
+        { name: "UFA Farm & Ranch Supply Store", address: "132 4 Street E, Oyen, AB, T0J 2J0", lat: 51.3546094, lng: -110.4746265 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "104 4 Street E, Oyen, AB, T0J 2J0", lat: 51.35384844924242, lng: -110.47438 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "9801 74 Street, Peace River, AB, T0H 1W0", lat: 56.18725562155556, lng: -117.614491 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "119 Highway Avenue N, Picture Butte, AB, T0K 1V0", lat: 49.87957110000001, lng: -112.7755772 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "1050 Corner Mountain Street, Pincher Creek, AB, T0K 1W0", lat: 49.501876, lng: -113.944675 },
+        { name: "UFA Farm & Ranch Supply Store", address: "3604 67 Street, Ponoka, AB, T4J 1J8", lat: 52.666467, lng: -113.606856 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "6520 46 Avenue, Ponoka, AB, T4J 1J8", lat: 52.674507, lng: -113.603416 },
+        { name: "UFA Farm & Ranch Supply Store", address: "4312 50 Avenue, Provost, AB, T0B 3S0", lat: 52.351723, lng: -110.255403 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "3803 56 Avenue, Provost, AB, T0B 3S0", lat: 52.35976016, lng: -110.2574083 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "3175 Commercial Drive, RM Of Moose Jaw, SK, S6H 4P5", lat: 50.4272786, lng: -105.562481 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "8121 Edgar Industrial Drive, Red Deer, AB, T4P 3R2", lat: 52.3151925, lng: -113.8390865 },
+        { name: "UFA Farm & Ranch Supply Store", address: "416 Lantern Street, Red Deer County, AB, T4E 0A5", lat: 52.2104183, lng: -113.8239546 },
+        { name: "UFA Petroleum Cardlock", address: "37479 Highway 2, Red Deer County, AB, T4E 1B1", lat: 52.222038, lng: -113.811513 },
+        { name: "UFA Petroleum Cardlock", address: "204 Burnt Ridge Road, Red Deer County, AB, T4S 2L4", lat: 52.2900344, lng: -113.8717235 },
+        { name: "UFA Petroleum Cardlock", address: "416 Lantern Street, Red Deer County, AB, T4E 0A5", lat: 52.2104183, lng: -113.8239546 },
+        { name: "UFA Petroleum Cardlock", address: "1632 Dirkson Drive NE, Redcliff, AB, T0J 2P0", lat: 50.0821131, lng: -110.7641038 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5602 43 Street, Rimbey, AB, T0C 2J0", lat: 52.64559170833459, lng: -114.2228037 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4326 52 Avenue, Rocky Mountain House, AB, T0M 1T0", lat: 52.377609232792345, lng: -114.924334 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4910 42 Street, Rycroft, AB, T0H 3A0", lat: 55.75720265, lng: -118.6997524 },
+        { name: "UFA Fertilizer Plant", address: "23-732010 Range Road 62, Sexsmith, AB, T0H 3C0", lat: 55.357856, lng: -118.792986 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5503 44 Avenue, Smoky Lake, AB, T0A 3C0", lat: 54.1096342, lng: -112.4835558 },
+        { name: "UFA Petroleum Cardlock", address: "5002 50 Street, Spirit River, AB, T0H 3G0", lat: 55.781138892592594, lng: -118.8389465 },
+        { name: "UFA Farm & Ranch Supply Store", address: "200 Diamond Avenue, Spruce Grove, AB, T7X 3A8", lat: 53.5357419, lng: -113.9096663 },
+        { name: "UFA Petroleum Cardlock", address: "200 Diamond Avenue, Spruce Grove, AB, T7X 3A8", lat: 53.5357419, lng: -113.9096663 },
+        { name: "UFA Farm & Ranch Supply Store", address: "3938 50 Avenue, St. Paul, AB, T0A 3A0", lat: 53.991365, lng: -111.294848 },
+        { name: "UFA Petroleum Cardlock", address: "3938 50 Avenue, St. Paul, AB, T0A 3A0", lat: 53.991365, lng: -111.294848 },
+        { name: "UFA Farm & Ranch Supply Store", address: "7007 50 Avenue NW, Stettler, AB, T0C 2L1", lat: 52.3235921, lng: -112.7406237 },
+        { name: "UFA Fertilizer Plant", address: "5107 46 Street, Stettler, AB, T0C 2L0", lat: 52.321609, lng: -112.6990224 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "7007A 50 Avenue, Stettler, AB, T0C 2L0", lat: 52.32398, lng: -112.7425935 },
+        { name: "UFA Farm & Ranch Supply Store", address: "58 Slater Road, Strathmore, AB, T1P 1J3", lat: 51.03113505, lng: -113.3873141 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "59 Spruce Park Drive, Strathmore, AB, T1P 1J2", lat: 51.031734, lng: -113.387673 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "1810 South Service Road, Swift Current, SK, S9H 3T3", lat: 50.286652, lng: -107.824797 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "18 Industrial Drive, Sylvan Lake, AB, T4S 1P4", lat: 52.3152, lng: -114.069728 },
+        { name: "UFA Farm & Ranch Supply Store", address: "5813 60 Avenue, Taber, AB, T1G 2C2", lat: 49.796452, lng: -112.134283 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5807 60 Avenue, Taber, AB, T1G 2E1", lat: 49.79638592164492, lng: -112.1455478 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "1631 2 Street N, Three Hills, AB, T0M 2A0", lat: 51.7066502, lng: -113.2470998 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5108 51 Avenue, Tofield, AB, T0B 4J0", lat: 53.367464, lng: -112.664367 },
+        { name: "UFA Farm & Ranch Supply Store", address: "101 1 Avenue N, Trochu, AB, T0M 2C0", lat: 51.823068, lng: -113.237241 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "100 1 Avenue N, Trochu, AB, T0M 2C0", lat: 51.82371676448556, lng: -113.2383179 },
+        { name: "UFA Farm & Ranch Supply Store", address: "5101 53 Avenue, Two Hills, AB, T0B 4K0", lat: 53.71333768870123, lng: -111.7382502 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4801 55 Avenue, Two Hills, AB, T0B 4K0", lat: 53.71620335, lng: -111.7381258 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4513 E Highway Street, Valleyview, AB, T0H 3N0", lat: 55.0654406, lng: -117.2774164 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4725 50 Avenue, Vegreville, AB, T9C 1L1", lat: 53.490993, lng: -112.043786 },
+        { name: "UFA Farm & Ranch Supply Store", address: "4908 47 Avenue, Vermilion, AB, T9X 1J6", lat: 53.349949, lng: -110.851326 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "4910 47 Avenue, Vermilion, AB, T9X 1J6", lat: 53.3503092, lng: -110.850968 },
+        { name: "UFA Farm & Ranch Supply Store", address: "919 2 Avenue N, Vulcan, AB, T0L 2B0", lat: 50.408587, lng: -113.270434 },
+        { name: "UFA Fertilizer Plant", address: "410 1 Avenue N, Vulcan, AB, T0L 2B0", lat: 50.407434, lng: -113.264394 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "110 Service Road, Vulcan, AB, T0L 2B0", lat: 50.40544785, lng: -113.2572109 },
+        { name: "UFA Petroleum Cardlock", address: "1100 Highway 813, Wabasca, AB, T0G 2K0", lat: 55.9578311, lng: -113.8128486 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "2202 17 Avenue, Wainwright, AB, T9W 1L2", lat: 52.8468931, lng: -110.8393163 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5008 53 Street, Warburg, AB, T0C 2T0", lat: 53.1793433, lng: -114.3224247 },
+        { name: "UFA Farm & Ranch Supply Store", address: "10820 100 Street, Westlock, AB, T7P 2C3", lat: 54.152266, lng: -113.837625 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "9616 107 Street, Westlock, AB, T7P 1R4", lat: 54.152531, lng: -113.871411 },
+        { name: "UFA Petroleum Cardlock", address: "4805 40 Avenue, Wetaskiwin, AB, T9A 3E9", lat: 52.9596407, lng: -113.373922 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "2 Cossette Lane, Weyburn, SK, S4H 0W4", lat: 49.6691121, lng: -103.8944682 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "5400 Caxton Street W, Whitecourt, AB, T7S 0A5", lat: 54.142887, lng: -115.712854 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "53417 Range Road 92, Wildwood, AB, T0E 2M0", lat: 53.62214445548833, lng: -115.2301135 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "476 Secondary Highway 726, Worsley, AB, T0H 3W0", lat: 56.5076803, lng: -119.1331451 },
+        { name: "UFA Petroleum Agency & Cardlock", address: "309 Fitchner Road, Yorkton, SK, S3N 2W7", lat: 51.2239086, lng: -102.4907083 }
+    ];
 
     // Create markers with location reference
     const markers = locations.map(loc => {
@@ -387,20 +395,37 @@
       input.value = '';
       const sugDiv = document.getElementById('suggestions');
       sugDiv.style.display = 'none';
-      
+
       // Remove old cluster
       map.removeLayer(currentCluster);
-      
+
       // Create new cluster with all markers
       currentCluster = L.markerClusterGroup();
       currentCluster.addLayers(markers);
       map.addLayer(currentCluster);
-      
+
       // Reset sidebar
       renderList(locations);
-      
+
       // Reset map view
       map.setView([54.0, -113.5], 6);
+    };
+
+    // Perform search
+    window.performSearch = async function() {
+      const val = document.getElementById('addressSearch').value.trim();
+      if (!val) return;
+
+      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&lang=en&limit=6&country=CA`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.features.length > 0) {
+        const lat = data.features[0].geometry.coordinates[1];
+        const lng = data.features[0].geometry.coordinates[0];
+        showNearby(lat, lng);
+        map.setView([lat, lng], 10);
+      }
     };
 
     // Photon address search
@@ -448,18 +473,18 @@
     function showNearby(lat, lng) {
       const nearbyLocs = locations.filter(loc => getDistance(lat, lng, loc.lat, loc.lng) < 80);
       const nearbyMarkers = nearbyLocs.map(loc => markers[locations.indexOf(loc)]);
-      
+
       // Remove old cluster
       map.removeLayer(currentCluster);
-      
+
       // Create new cluster with filtered markers
       currentCluster = L.markerClusterGroup();
       currentCluster.addLayers(nearbyMarkers);
       map.addLayer(currentCluster);
-      
+
       // Update sidebar
       renderList(nearbyLocs);
-      
+
       // Fit map to bounds
       if (nearbyMarkers.length > 0) {
         const bounds = L.latLngBounds(nearbyMarkers.map(m => m.getLatLng()));
